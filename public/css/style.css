@@ -1,0 +1,88 @@
+.nav-pills {
+    display: block;
+    width: 100%;
+  }
+
+  .nav-link {
+  color: #ffffff !important;
+  }
+  
+  .nav-link:hover {
+    background-color: #343a40;
+    color: #000000;
+  }
+
+  .submenu-item {
+    padding-left: 20px;
+    transition: height 0.4s ease-in-out, opacity 0.4s ease-in-out;
+
+  }
+  .nav-link.active {
+    background-color: #880808 !important; 
+    color: white !important;
+    font-weight: bold;
+  }
+
+  iframe {
+    width: 100%;
+    height: auto;
+    border: none;
+    margin-top: 0px;
+    overflow: auto !important; 
+  }
+
+  iframe.dashboard {
+    height: auto !important;
+    min-height: unset; 
+  }
+
+  a {
+    text-decoration: none;
+    color: inherit; 
+  }
+
+  a:hover {
+    color: inherit; 
+  }
+
+  .selected {
+    background-color: #212529;
+    color: white;
+  }
+
+  .theme11 {
+    background: black;    
+    color: gray;
+  }
+
+  .default-padding {
+    padding: 1px 10px 10px;
+  }
+
+  .lolol {
+    background: linear-gradient(to right, #880808, #3D1C1C);    
+    color: white;
+    margin: 0;
+    padding: 15px; 
+  }
+  
+  html, body {
+    height: 100vh;  
+    margin: 0;           
+    overflow: auto;   
+    font-size: 15px;      
+}
+
+  body:not(iframe) {
+    height: 100%;
+    margin: 0;
+    overflow: auto;
+    font-size: 15px;
+}
+
+  .btn.disabled, 
+  .btn:disabled {
+      color: black !important;  
+      pointer-events: none;      
+      opacity: 1 !important;     
+  }

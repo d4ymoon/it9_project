@@ -7,6 +7,9 @@ use App\Http\Controllers\DeductionTypeController;
 use App\Http\Controllers\DeductionController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\Payroll1Controller;
+use App\Http\Controllers\ContributionController;
+use App\Http\Controllers\ContributionTypeController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -16,6 +19,9 @@ Route::get('/dash', function () {
     return view('dashboard.index');
 });
 
+Route::get('/test', function () {
+    return view('payrolls1.index');
+});
 
 Route::resource('positions', PositionController::class);
 Route::resource('employees', EmployeeController::class);
@@ -38,3 +44,8 @@ Route::put('/deductions/{id}', [DeductionController::class, 'update'])->name('de
 Route::get('/attendance', [AttendanceController::class, 'create'])->name('attendance.create');
 Route::post('/attendance', [AttendanceController::class, 'store'])->name('attendance.store');
 Route::get('/attendance1', [AttendanceController::class, 'index'])->name('attendance.index');
+
+
+Route::post('/payrolls1/generate', [Payroll1Controller::class, 'generate'])->name('payrolls1.generate');
+Route::resource('contributions', ContributionController::class);
+Route::resource('contributiontypes', ContributionTypeController::class);

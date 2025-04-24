@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Employee;
 use App\Models\Payroll; 
 use App\Models\Position;
+use App\Models\Contribution;
+use App\Models\ContributionType;
 
 class EmployeeController extends Controller
 {
@@ -15,9 +17,12 @@ class EmployeeController extends Controller
     public function index()
     {
         //
+        
         $positions = Position::all();
-        $employees = Employee::with('payroll')->get();
-        return view('employees.index', compact('employees', 'positions'));
+    $employees = Employee::with(['payroll', 'contributions.contributionType'])->get();
+    $contributionTypes = ContributionType::all(); // ✅ fetch contribution types
+
+    return view('employees.index', compact('employees', 'positions', 'contributionTypes'));
     }
 
     /**

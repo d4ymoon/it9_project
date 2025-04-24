@@ -69,6 +69,10 @@
                                         Edit employee
                                     </button>
 
+                                    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editEmployeeContribution">
+                                        Edit Contributions
+                                    </button>
+
                                     <a href="{{ route('payrolls.edit', $employee->payroll->id) }}" class="btn btn-sm btn-secondary">Edit payroll</a>
 
                                     <form action="{{ route('employees.destroy', $employee->id) }}" method="POST"
@@ -274,6 +278,120 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal -->
+<div class="modal fade" id="editEmployeeContribution" tabindex="-1" aria-labelledby="editEmployeeContributionLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="editEmployeeContributionLabel">Edit Contributions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Add Contribution Form -->
+                <form action="{{ route('contributions.store') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="employee_id" value="{{ $employee->id }}">
+
+                    <div class="d-flex align-items-center mb-3">
+                        <!-- Contribution Type -->
+                        <select name="contribution_type_id" class="form-select form-select-sm me-2" style="width: 160px;" required>
+                            <option value="" disabled selected>-- Select Type --</option>
+                            @foreach($contributionTypes as $type)
+                                <option value="{{ $type->id }}">{{ $type->name }}</option>
+                            @endforeach
+                        </select>
+
+                        <!-- Calculation Type -->
+                        <select name="calculation_type" class="form-select form-select-sm me-2" style="width: 120px;" required>
+                            <option value="fixed" selected>Fixed</option>
+                            <option value="percent">Percent</option>
+                        </select>
+
+                        <!-- Value -->
+                        <input type="number" step="0.01" name="value" class="form-control form-control-sm me-2" style="width: 120px;" placeholder="Value" required>
+
+                        <!-- Add Button -->
+                        <button type="submit" class="btn btn-success btn-sm me-2">Add</button>
+
+                    
+                </form>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addContributionType">
+                    + New Contribution Type
+                </button>
+            </div>
+                <!-- Contributions List -->
+                <div id="contributions_list">
+                    @if($employee->contributions->isEmpty())
+                        <p class="text-muted">No contributions added yet.</p>
+                    @else
+                        <ul class="list-group">
+                            @foreach($employee->contributions as $contribution)
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <!-- Label -->
+                                    <span>
+                                        {{ $contribution->contributionType->name }}
+                                        <small class="text-muted">({{ ucfirst($contribution->calculation_type) }})</small>
+                                    </span>
+
+                                    <!-- Actions -->
+                                    <div class="d-flex align-items-center" style="gap: 8px;">
+                                        <!-- Update -->
+                                        <form action="{{ route('contributions.update', $contribution->id) }}" method="POST" class="d-flex align-items-center">
+                                            @csrf
+                                            @method('PUT')
+                                            <input type="number" step="0.01" name="value" value="{{ $contribution->value }}" class="form-control form-control-sm" style="width: 100px;" required>
+                                            <button type="submit" class="btn btn-primary btn-sm ms-2">Update</button>
+                                        </form>
+
+                                        <!-- Delete -->
+                                        <form action="{{ route('contributions.destroy', $contribution->id) }}" method="POST">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                        </form>
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+        <!-- Add Contribution Type Modal -->
+        <div class="modal fade" id="addContributionType" tabindex="-1" aria-labelledby="addContributionTypeModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-sm  modal-dialog-centered">
+              <div class="modal-content">
+                
+                <div class="modal-header">
+                  <h5 class="modal-title" id="addContributionTypeModalLabel">Add New Contribution Type</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <form action="{{ route('contributiontypes.store') }}" method="POST">
+                  @csrf
+                  <div class="modal-body">
+                    <div class="mb-3">
+                      <label for="contribution_type_name" class="form-label">Contribution Type Name</label>
+                      <input type="text" name="name" class="form-control" id="contribution_type_name" placeholder="e.g. SSS" required>
+                    </div>
+                  </div>
+                  
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                  </div>
+                </form>
+          
+              </div>
+            </div>
+          </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous">

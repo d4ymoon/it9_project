@@ -58,6 +58,12 @@
                             <i class="bi bi-file-text"></i> <span class="sidebar-text">Payrolls</span>
                         </a>
                     </li>
+
+                    <li>
+                        <a href="{{ route('payrolls.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('payrolls.index') }}')">
+                            <i class="bi bi-file-text"></i> <span class="sidebar-text">Payrolls1</span>
+                        </a>
+                    </li>
                     
                    
                     </ul>

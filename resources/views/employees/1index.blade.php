@@ -54,7 +54,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($employees as $employee)
+                        @forelse ($employees as $employee)
                             <tr>
                                 <td>{{ $employee->id }}</td>
                                 <td>{{ $employee->contact_number }}</td>
@@ -63,17 +63,16 @@
                                 <td>{{ $employee->hire_date }}</td>
                                 <td>{{ $employee->bank_acct }}</td>
                                 <td class="text-nowrap" style="width:275px">
-
+        
                                     <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
                                         data-bs-target="#editEmployeeModal{{ $employee->id }}">
                                         Edit employee
                                     </button>
-
+        
                                     <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editEmployeeContribution">
                                         Edit Contributions
                                     </button>
-
-
+        
                                     <form action="{{ route('employees.destroy', $employee->id) }}" method="POST"
                                         onsubmit="return confirm('Are you sure you want to delete this employee?');"
                                         style="display: inline-block; margin: 0;">
@@ -88,18 +87,18 @@
                                 aria-labelledby="editEmployeeModalLabel{{ $employee->id }}" aria-hidden="true">
                                 <div class="modal-dialog">
                                     <div class="modal-content">
-
+        
                                         <div class="modal-header">
                                             <h5 class="modal-title" id="editEmployeeModalLabel{{ $employee->id }}">Edit
                                                 Employee</h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal"
                                                 aria-label="Close"></button>
                                         </div>
-
+        
                                         <form action="{{ route('employees.update', $employee->id) }}" method="POST">
                                             @csrf
                                             @method('PUT')
-
+        
                                             <div class="modal-body">
                                                 <div class="mb-3">
                                                     <label for="name{{ $employee->id }}"
@@ -108,7 +107,7 @@
                                                         id="name{{ $employee->id }}" name="name"
                                                         value="{{ $employee->name }}" required>
                                                 </div>
-
+        
                                                 <div class="mb-3">
                                                     <label for="contact{{ $employee->id }}" class="form-label">Contact
                                                         Number</label>
@@ -117,7 +116,7 @@
                                                         value="{{ $employee->contact_number }}" required
                                                         maxlength="11">
                                                 </div>
-
+        
                                                 <div class="mb-3">
                                                     <label for="email{{ $employee->id }}"
                                                         class="form-label">Email</label>
@@ -125,7 +124,7 @@
                                                         id="email{{ $employee->id }}" name="email"
                                                         value="{{ $employee->email }}" required>
                                                 </div>
-
+        
                                                 <div class="mb-3">
                                                     <label for="bank{{ $employee->id }}" class="form-label">Bank
                                                         Account</label>
@@ -134,7 +133,7 @@
                                                         value="{{ $employee->bank_acct }}" required>
                                                 </div>
                                             </div>
-
+        
                                             <div class="modal-footer">
                                                 <button type="button" class="btn btn-outline-secondary"
                                                     data-bs-dismiss="modal">Cancel</button>
@@ -142,20 +141,19 @@
                                                     Employee</button>
                                             </div>
                                         </form>
-
+        
                                     </div>
                                 </div>
                             </div>
-                      
-
-
+                        @empty
+                            <!-- If no employees are found -->
+                            <tr><td colspan="7">No employees found.</td></tr>
+                        @endforelse
                     </tbody>
                 </table>
-
             </div>
         </div>
-    </div>
-
+        
     
 
     <!-- Modal -->
@@ -283,7 +281,7 @@
           
               </div>
             </div>
-          </div>  @endforeach
+          </div>
 <!--- NEW EMPLOYEE MODAL --->
 <div class="modal fade" id="newtenantmodal" tabindex="-1" aria-labelledby="exampleModalLabel"
 aria-hidden="true">

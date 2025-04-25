@@ -18,7 +18,7 @@ class EmployeeController extends Controller
     {
         //
         
-        $positions = Position::all();
+    $positions = Position::all();
     $employees = Employee::with(['payroll', 'contributions.contributionType'])->get();
     $contributionTypes = ContributionType::all(); // ✅ fetch contribution types
 

@@ -83,6 +83,7 @@ class Payroll1Controller extends Controller
             $end = now()->endOfMonth();
             $payPeriod = $start->toDateString() . '_to_' . $end->toDateString();
             $taxMethod  = 'calculateMonthlyTax';
+            
         } 
         // For Semi-Monthly Payroll
         else {
@@ -119,7 +120,7 @@ class Payroll1Controller extends Controller
             $workingDaysCount = $workingDays->count();
     
             // Calculate daily rate based on semi-monthly salary
-            $dailyRate = $semiMonthlySalary / $workingDaysCount;
+            $dailyRate = $monthlySalary / $workingDaysCount;
     
             // Get the number of days the employee was present during the period
             $daysPresent = $employee->attendances()
@@ -133,6 +134,10 @@ class Payroll1Controller extends Controller
     
             // Deduct absences from semi-monthly salary
             $adjustedSalary = $semiMonthlySalary - $absenceDeduction;
+
+            $dailyRate = $employee->daily_rate; // make sure this exists in your Employee model
+            $hourlyRate = $dailyRate / 8;
+            $overtimeRate = $hourlyRate * 1.25;
     
             // Calculate overtime pay (CHANGE HERE )
             $overtimeHours = $employee->attendances()
@@ -149,7 +154,7 @@ class Payroll1Controller extends Controller
                         : 0;
                 });
     
-            $overtimePay = $overtimeHours * 50;
+            $overtimePay = $overtimeHours * $overtimeRate;
     
             // Calculate total contributions
             $totalContributions = $employee->contributions->sum(function ($contribution) use ($adjustedSalary) {
@@ -226,11 +231,9 @@ class Payroll1Controller extends Controller
         string $overtimeType = 'regular',
         int $workDaysPerMonth = 22
     ): float {
-        // Step 1: Get Daily and Hourly Rate
         $dailyRate = $monthlySalary / $workDaysPerMonth;
         $hourlyRate = $dailyRate / 8;
     
-        // Step 2: Determine the Overtime Rate Multiplier
         $overtimeMultipliers = [
             'regular'       => 1.25,  // 25% extra
             'rest_day'      => 1.30,  // 30% extra

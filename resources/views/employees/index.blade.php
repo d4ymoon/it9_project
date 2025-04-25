@@ -285,43 +285,49 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title" id="editEmployeeContributionLabel">Edit Contributions</h5>
+                <h5 class="modal-title" id="editEmployeeContributionLabel">Edit Employee Contributions</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
             <div class="modal-body">
                 <!-- Add Contribution Form -->
-                <form action="{{ route('contributions.store') }}" method="POST">
-                    @csrf
-                    <input type="hidden" name="employee_id" value="{{ $employee->id }}">
-
-                    <div class="d-flex align-items-center mb-3">
-                        <!-- Contribution Type -->
-                        <select name="contribution_type_id" class="form-select form-select-sm me-2" style="width: 160px;" required>
-                            <option value="" disabled selected>-- Select Type --</option>
-                            @foreach($contributionTypes as $type)
-                                <option value="{{ $type->id }}">{{ $type->name }}</option>
-                            @endforeach
-                        </select>
-
-                        <!-- Calculation Type -->
-                        <select name="calculation_type" class="form-select form-select-sm me-2" style="width: 120px;" required>
-                            <option value="fixed" selected>Fixed</option>
-                            <option value="percent">Percent</option>
-                        </select>
-
-                        <!-- Value -->
-                        <input type="number" step="0.01" name="value" class="form-control form-control-sm me-2" style="width: 120px;" placeholder="Value" required>
-
-                        <!-- Add Button -->
-                        <button type="submit" class="btn btn-success btn-sm me-2">Add</button>
-
-                    
-                </form>
-                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addContributionType">
-                    + New Contribution Type
-                </button>
-            </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <!-- Left: Form -->
+                    <div class="d-flex align-items-center">
+                        <form action="{{ route('contributions.store') }}" method="POST" class="d-flex align-items-center">
+                            @csrf
+                            <input type="hidden" name="employee_id" value="{{ $employee->id }}">
+                
+                            <!-- Contribution Type -->
+                            <select name="contribution_type_id" class="form-select form-select-sm me-2" style="width: 160px;" required>
+                                <option value="" disabled selected>-- Select Type --</option>
+                                @foreach($contributionTypes as $type)
+                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                @endforeach
+                            </select>
+                
+                            <!-- Calculation Type -->
+                            <select name="calculation_type" class="form-select form-select-sm me-2" style="width: 100px;" required> 
+                                <option value="percent" selected>Percent</option>
+                                <option value="fixed">Fixed</option>
+                            </select>
+                
+                            <!-- Value -->
+                            <input type="number" step="0.01" name="value" class="form-control form-control-sm me-2" style="width: 120px;" placeholder="Value" required>
+                
+                            <!-- Add Button -->
+                            <button type="submit" class="btn btn-success btn-sm me-2">Add</button>                    
+                        </form>
+                    </div>
+                
+                    <div class="vr mx-2"></div>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addContributionType">
+                            + New Contribution Type
+                        </button>
+                    </div>
+                </div>
+                
                 <!-- Contributions List -->
                 <div id="contributions_list">
                     @if($employee->contributions->isEmpty())
@@ -333,18 +339,25 @@
                                     <!-- Label -->
                                     <span>
                                         {{ $contribution->contributionType->name }}
-                                        <small class="text-muted">({{ ucfirst($contribution->calculation_type) }})</small>
                                     </span>
 
                                     <!-- Actions -->
                                     <div class="d-flex align-items-center" style="gap: 8px;">
                                         <!-- Update -->
-                                        <form action="{{ route('contributions.update', $contribution->id) }}" method="POST" class="d-flex align-items-center">
+                                        <form action="{{ route('contributions.update', $contribution) }}" method="POST" class="d-flex align-items-center">
                                             @csrf
                                             @method('PUT')
-                                            <input type="number" step="0.01" name="value" value="{{ $contribution->value }}" class="form-control form-control-sm" style="width: 100px;" required>
-                                            <button type="submit" class="btn btn-primary btn-sm ms-2">Update</button>
-                                        </form>
+                                          
+                                            <select name="calculation_type" class="form-select form-select-sm me-2" style="width: 100px;">
+                                              <option value="fixed"  {{ $contribution->calculation_type==='fixed'  ? 'selected':'' }}>Fixed</option>
+                                              <option value="percent"{{ $contribution->calculation_type==='percent'? 'selected':'' }}>Percent</option>
+                                            </select>
+                                          
+                                            <input type="number" step="0.01" name="value" value="{{ $contribution->value }}"
+                                                   class="form-control form-control-sm me-2" style="width: 100px;" required>
+                                          
+                                            <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                                          </form>
 
                                         <!-- Delete -->
                                         <form action="{{ route('contributions.destroy', $contribution->id) }}" method="POST">

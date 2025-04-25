@@ -15,13 +15,14 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('employee_id');
             $table->unsignedBigInteger('contribution_type_id');
-            $table->enum('calculation_type',['fixed','percent'])->default('fixed');
-            $table->decimal('value',10,2)->default(0);
+            $table->enum('calculation_type', ['fixed', 'percent'])->default('fixed');
+            $table->decimal('value', 10, 2)->default(0);
             $table->timestamps();
         
             $table->foreign('employee_id')->references('id')->on('employees')->onDelete('cascade');
             $table->foreign('contribution_type_id')->references('id')->on('contribution_types')->onDelete('cascade');
-            $table->unique(['employee_id','contribution_type_id']);
+            
+            $table->unique(['employee_id', 'contribution_type_id']); 
         });
     }
 

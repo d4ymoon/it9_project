@@ -34,19 +34,10 @@ class ContributionController extends Controller
             'calculation_type' => 'required|in:fixed,percent',
             'value' => 'required|numeric|min:0',
         ]);
-    
-        try {
-            Contribution::create($request->all());
-            return back()->with('success', 'Contribution added successfully.');
-        } catch (\Illuminate\Database\QueryException $e) {
-            if ($e->errorInfo[1] == 1062) {
-                // Duplicate entry error
-                return back()->with('error', 'This employee already has this contribution type.');
-            }
-    
-            // Other DB errors
-            return back()->with('error', 'An error occurred while adding the contribution.');
-        }
+
+        Contribution::create($request->all());
+
+        return back()->with('success', 'Contribution added successfully.');
     }
 
     /**
@@ -68,32 +59,27 @@ class ContributionController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Contribution $id)
-    {
-        //
-        $contribution = Contribution::findOrFail($id);
+    public function update(Request $request, Contribution $contribution)
+{
+    $request->validate([
+        'value'            => 'required|numeric|min:0',
+        'calculation_type' => 'required|in:fixed,percent',
+    ]);
 
-        $request->validate([
-            'value' => 'required|numeric|min:0',
-            'calculation_type' => 'required|in:fixed,percent',
-        ]);
+    $contribution->update([
+        'value'            => $request->value,
+        'calculation_type' => $request->calculation_type,
+    ]);
 
-        $contribution->update([
-            'value' => $request->value,
-            'calculation_type' => $request->calculation_type,
-        ]);
-
-        return back()->with('success', 'Contribution updated successfully.');
-    }
-
+    return back()->with('success', 'Contribution updated successfully.');
+}
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Contribution $id)
+    public function destroy(Contribution $contribution)
     {
-        $contribution = Contribution::findOrFail($id);
+        //
         $contribution->delete();
-
         return back()->with('success', 'Contribution deleted successfully.');
     }
 }

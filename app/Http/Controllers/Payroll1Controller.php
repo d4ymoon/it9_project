@@ -119,8 +119,7 @@ class Payroll1Controller extends Controller
     
             $workingDaysCount = $workingDays->count();
     
-            // Calculate daily rate based on semi-monthly salary
-            $dailyRate = $monthlySalary / $workingDaysCount;
+            $dailyRate = $monthlySalary / 22;
     
             // Get the number of days the employee was present during the period
             $daysPresent = $employee->attendances()
@@ -131,31 +130,58 @@ class Payroll1Controller extends Controller
             // Calculate absences and deductions
             $absentDays = $workingDaysCount - $daysPresent;
             $absenceDeduction = $absentDays * $dailyRate;
-    
-            // Deduct absences from semi-monthly salary
-            $adjustedSalary = $semiMonthlySalary - $absenceDeduction;
 
-            $dailyRate = $employee->daily_rate; // make sure this exists in your Employee model
-            $hourlyRate = $dailyRate / 8;
-            $overtimeRate = $hourlyRate * 1.25;
-    
-            // Calculate overtime pay (CHANGE HERE )
-            $overtimeHours = $employee->attendances()
-                ->whereBetween('date', [$start, $end])
-                ->get()
-                ->sum(function ($attendance) {
-                    if (!$attendance->time_out) return 0;
-    
-                    $timeOut = Carbon::parse($attendance->time_out);
-                    $standardEnd = Carbon::createFromTime(17, 0, 0);
-    
-                    return $timeOut->gt($standardEnd)
-                        ? $timeOut->diffInMinutes($standardEnd) / 60
-                        : 0;
-                });
-    
-            $overtimePay = $overtimeHours * $overtimeRate;
-    
+            if ($payFrequency === 'monthly') {
+                $adjustedSalary = $monthlySalary - $absenceDeduction;
+            } else {
+                $adjustedSalary = $semiMonthlySalary - $absenceDeduction;
+            }
+// MATAY
+$hourlyRate = $dailyRate / 8;
+$weekdayOvertimeRate = $hourlyRate * 1.25;
+$weekendOvertimeRate = $hourlyRate * 1.5;
+
+$overtimeHours = 0;
+$overtimePay = 0;
+
+$attendances = $employee->attendances()
+    ->whereBetween('date', [$start, $end])
+    ->where('status', 'Present')
+    ->whereNotNull('time_in')
+    ->whereNotNull('time_out')
+    ->select('date', 'time_in', 'time_out')
+    ->get();
+
+foreach ($attendances as $attendance) {
+    if (!$attendance->time_out || !$attendance->time_in) continue;
+
+    $attendanceDate = Carbon::parse($attendance->date, 'Asia/Singapore');
+    $timeIn = Carbon::parse($attendance->time_in, 'Asia/Singapore');
+    $timeOut = Carbon::parse($attendance->time_out, 'Asia/Singapore');
+
+    if ($attendanceDate->isWeekend()) {
+        $workedDurationMinutes = $timeIn->diffInMinutes($timeOut);
+
+        if ($workedDurationMinutes >= 30) {
+            $workedHours = $workedDurationMinutes / 60;
+            $overtimeHours += $workedHours;
+            $overtimePay += $workedHours * $weekendOvertimeRate;
+        }
+    } else {
+        if ($timeOut->gt($timeOut->copy()->setTime(17, 0, 0))) {
+            $fivePm = $timeOut->copy()->setTime(17, 0, 0);
+            $overtimeMinutes = $fivePm->diffInMinutes($timeOut);
+
+            if ($overtimeMinutes >= 30) {
+                $workedHours = $overtimeMinutes / 60;
+                $overtimeHours += $workedHours;
+                $overtimePay += $workedHours * $weekdayOvertimeRate;
+            }
+        }
+    }
+}
+
+
             // Calculate total contributions
             $totalContributions = $employee->contributions->sum(function ($contribution) use ($adjustedSalary) {
                 return $contribution->calculation_type === 'percent'
@@ -224,32 +250,5 @@ class Payroll1Controller extends Controller
             return 183_541.80 + ($taxable_income - 666_667) * 0.35;
         }
     }
-
-    function calculateOvertimePay(
-        float $monthlySalary,
-        float $overtimeHours,
-        string $overtimeType = 'regular',
-        int $workDaysPerMonth = 22
-    ): float {
-        $dailyRate = $monthlySalary / $workDaysPerMonth;
-        $hourlyRate = $dailyRate / 8;
-    
-        $overtimeMultipliers = [
-            'regular'       => 1.25,  // 25% extra
-            'rest_day'      => 1.30,  // 30% extra
-            'special_day'   => 1.50,  // 50% extra
-            'holiday'       => 1.30,  // 30% extra (for regular holidays)
-            'rest_overtime' => 1.30,  // rest day OT
-            'night_shift'   => 1.10,  // 10% extra
-        ];
-    
-        $multiplier = $overtimeMultipliers[$overtimeType] ?? 1.25; // fallback to regular
-    
-        // Step 3: Calculate and return total OT pay
-        $overtimePay = $hourlyRate * $multiplier * $overtimeHours;
-    
-        return round($overtimePay, 2);
-    }
-
 
 }

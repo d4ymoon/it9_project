@@ -120,6 +120,7 @@ class Payroll1Controller extends Controller
             $workingDaysCount = $workingDays->count();
     
             $dailyRate = $monthlySalary / 22;
+            $hourlyRate = $dailyRate / 8;
     
             // Get the number of days the employee was present during the period
             $daysPresent = $employee->attendances()
@@ -137,12 +138,11 @@ class Payroll1Controller extends Controller
                 $adjustedSalary = $semiMonthlySalary - $absenceDeduction;
             }
 // MATAY
-$hourlyRate = $dailyRate / 8;
-$weekdayOvertimeRate = $hourlyRate * 1.25;
-$weekendOvertimeRate = $hourlyRate * 1.5;
-
-$overtimeHours = 0;
-$overtimePay = 0;
+$totalRegularHours = 0;
+$totalWeekdayOvertimeHours = 0;
+$totalWeekendHours = 0;
+$weekdayOvertimeRate = 1.25 * $hourlyRate; // 25% extra for weekdays overtime
+$weekendOvertimeRate = 1.5 * $hourlyRate;  // 50% extra for weekends
 
 $attendances = $employee->attendances()
     ->whereBetween('date', [$start, $end])
@@ -152,36 +152,105 @@ $attendances = $employee->attendances()
     ->select('date', 'time_in', 'time_out')
     ->get();
 
-foreach ($attendances as $attendance) {
-    if (!$attendance->time_out || !$attendance->time_in) continue;
+echo "Attendance Records Retrieved: " . $attendances->count() . "<br>";
 
+foreach ($attendances as $attendance) {
     $attendanceDate = Carbon::parse($attendance->date, 'Asia/Singapore');
     $timeIn = Carbon::parse($attendance->time_in, 'Asia/Singapore');
     $timeOut = Carbon::parse($attendance->time_out, 'Asia/Singapore');
 
-    if ($attendanceDate->isWeekend()) {
-        $workedDurationMinutes = $timeIn->diffInMinutes($timeOut);
+    // Ensure that Time In and Time Out are on the correct day
+    $timeIn->setDate($attendanceDate->year, $attendanceDate->month, $attendanceDate->day);
+    $timeOut->setDate($attendanceDate->year, $attendanceDate->month, $attendanceDate->day);
 
-        if ($workedDurationMinutes >= 30) {
-            $workedHours = $workedDurationMinutes / 60;
-            $overtimeHours += $workedHours;
-            $overtimePay += $workedHours * $weekendOvertimeRate;
+    echo "<br>Processing Attendance on: " . $attendanceDate->toDateString() . "<br>";
+    echo "Time In: " . $timeIn->toDateTimeString() . " | Time Out: " . $timeOut->toDateTimeString() . "<br>";
+
+    if (!$timeIn || !$timeOut || $timeOut->lessThanOrEqualTo($timeIn)) {
+        echo "Skipping Invalid Attendance (Time In: $timeIn, Time Out: $timeOut)<br>";
+        continue; // Skip invalid entries
+    }
+
+    $workedMinutes = $timeIn->diffInMinutes($timeOut);
+    $workedHours = $workedMinutes / 60;
+    echo "Total Worked Time: " . number_format($workedHours, 2) . " hours<br>";
+
+    // Handle Weekend Work
+    if ($attendanceDate->isWeekend()) {
+        if ($workedHours > 2) {
+            $totalWeekendHours += $workedHours;
+            echo "Weekend Work (More than 2 hours): " . number_format($workedHours, 2) . " hours<br>";
+        } else {
+            echo "Weekend Work (Less than 2 hours): No Weekend Hours added<br>";
         }
     } else {
-        if ($timeOut->gt($timeOut->copy()->setTime(17, 0, 0))) {
-            $fivePm = $timeOut->copy()->setTime(17, 0, 0);
-            $overtimeMinutes = $fivePm->diffInMinutes($timeOut);
+        // Handle Weekday Work (Monday-Friday)
+        $startOfWork = $attendanceDate->copy()->setTime(8, 0, 0);   // 8:00 AM
+        $endOfWork = $attendanceDate->copy()->setTime(17, 0, 0);    // 5:00 PM
 
-            if ($overtimeMinutes >= 30) {
-                $workedHours = $overtimeMinutes / 60;
-                $overtimeHours += $workedHours;
-                $overtimePay += $workedHours * $weekdayOvertimeRate;
+        echo "Regular Work Start: " . $startOfWork->toDateTimeString() . " | Regular Work End: " . $endOfWork->toDateTimeString() . "<br>";
+
+        // Regular Work Time Calculation
+        // 1. Set regular time in to 8:00 AM of the attendance date
+        $regularTimeIn = $timeIn->greaterThan($startOfWork) ? $timeIn : $startOfWork;
+        
+        // 2. Set regular time out to 5:00 PM if the clock-out time is later
+        $regularTimeOut = $timeOut->lessThanOrEqualTo($endOfWork) ? $timeOut : $endOfWork;
+
+        // Ensure regular work hours are within the specified work period (8 AM to 5 PM)
+        if ($regularTimeIn->lessThan($regularTimeOut)) {
+            $regularMinutes = $regularTimeIn->diffInMinutes($regularTimeOut);
+            $regularHours = $regularMinutes / 60;
+            $totalRegularHours += $regularHours;
+            echo "Regular Working Hours: " . number_format($regularHours, 2) . " hours<br>";
+        } else {
+            echo "No Regular Working Hours (Time In: $regularTimeIn, Time Out: $regularTimeOut)<br>";
+        }
+
+        // Overtime Calculation (after 5:00 PM)
+        if ($timeOut->greaterThan($endOfWork)) {
+            // Ensure we're comparing the same date for overtime calculation
+            $overtimeStart = $endOfWork; // 5:00 PM of the attendance date
+            $overtimeEnd = $attendanceDate->copy()->setTime($timeOut->hour, $timeOut->minute, $timeOut->second);
+            
+            // Calculate overtime duration
+            $overtimeMinutes = $overtimeStart->diffInMinutes($overtimeEnd);
+            $overtimeHours = $overtimeMinutes / 60;
+
+            echo "Overtime Time Calculation: End of Work (5:00 PM) to Time Out (" . $overtimeEnd->toDateTimeString() . ") = $overtimeHours hours<br>";
+
+            // Ensure that overtime is only counted if it's more than 2 hours
+            if ($overtimeHours > 2) {
+                $totalWeekdayOvertimeHours += $overtimeHours;
+                echo "Weekday Overtime (More than 2 hours): " . number_format($overtimeHours, 2) . " hours<br>";
+            } else {
+                echo "No Overtime (under 2 hours)<br>";
             }
+        } else {
+            echo "No Overtime Worked (Time Out before 5:00 PM)<br>";
         }
     }
 }
 
+$totalRegularPay = $totalRegularHours * $hourlyRate;
+$totalWeekdayOvertimePay = $totalWeekdayOvertimeHours * $weekdayOvertimeRate;
+$totalWeekendPay = $totalWeekendHours * $weekendOvertimeRate;
 
+// Sum up all the payments
+$adjustedSalary = $totalRegularPay + $totalWeekdayOvertimePay + $totalWeekendPay;
+
+echo "Regular Pay: " . number_format($totalRegularPay, 2) . " (Total Regular Hours: $totalRegularHours * Hourly Rate: $hourlyRate)<br>";
+echo "Weekday Overtime Pay: " . number_format($totalWeekdayOvertimePay, 2) . " (Total Weekday Overtime Hours: $totalWeekdayOvertimeHours * Weekday Overtime Rate: $weekdayOvertimeRate)<br>";
+echo "Weekend Pay: " . number_format($totalWeekendPay, 2) . " (Total Weekend Hours: $totalWeekendHours * Weekend Overtime Rate: $weekendOvertimeRate)<br>";
+
+
+echo "<br>Results:<br>";
+echo "Total Regular Working Hours (Mon-Fri 8am-5pm): " . number_format($totalRegularHours, 2) . " hours<br>";
+echo "Total Weekday Overtime Hours (Mon-Fri after 5pm, >2h): " . number_format($totalWeekdayOvertimeHours, 2) . " hours<br>";
+echo "Total Weekend Working Hours (Sat/Sun, >2h): " . number_format($totalWeekendHours, 2) . " hours<br>";
+
+
+exit();
             // Calculate total contributions
             $totalContributions = $employee->contributions->sum(function ($contribution) use ($adjustedSalary) {
                 return $contribution->calculation_type === 'percent'
@@ -190,6 +259,7 @@ foreach ($attendances as $attendance) {
             });
     
             // Calculate taxable income and tax
+            $overtimePay = ($totalWeekdayOvertimeHours * $weekdayOvertimeRate) + ($totalWeekendHours * $weekendOvertimeRate);
             $taxableIncome = $adjustedSalary + $overtimePay - $totalContributions;
             $tax = $this->{$taxMethod}($taxableIncome);
             $netSalary = $taxableIncome - $tax;

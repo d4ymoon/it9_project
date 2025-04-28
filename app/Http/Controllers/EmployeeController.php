@@ -3,8 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Employee;
-use App\Models\Payroll; 
+use App\Models\Employee; 
 use App\Models\Position;
 use App\Models\Contribution;
 use App\Models\ContributionType;
@@ -15,14 +14,12 @@ class EmployeeController extends Controller
      * Display a listing of the resource.
      */
     public function index()
-    {
-        //
-        
-    $positions = Position::all();
-    $employees = Employee::with(['payroll', 'contributions.contributionType'])->get();
-    $contributionTypes = ContributionType::all(); // ✅ fetch contribution types
+    {     
+        $positions = Position::all();
+        $employees = Employee::with(['payroll', 'contributions.contributionType'])->get();
+        $contributionTypes = ContributionType::all();
 
-    return view('employees.index', compact('employees', 'positions', 'contributionTypes'));
+        return view('employees.index', compact('employees', 'positions', 'contributionTypes'));
     }
 
     /**
@@ -51,23 +48,6 @@ class EmployeeController extends Controller
     
         $employee = Employee::create($validated);
 
-        $positionSalary = \App\Models\Position::find($validated['position_id'])->salary;
-        $tax = $this->calculateTax($positionSalary);
-        $taxableIncome = $positionSalary; // no deductions yet, 
-        $netSalary = $taxableIncome - $tax;
-
-        $payroll = new Payroll();
-        $payroll->employee_id = $employee->id;
-        $payroll->basic_pay = $positionSalary;
-        $payroll->overtime_pay = 0;
-        $payroll->total_deductions = 0;
-        $payroll->taxable_income = $taxableIncome;
-        $payroll->tax = $tax;
-        $payroll->net_salary = $netSalary;
-        $payroll->pay_period = null;
-        $payroll->save();
-    
-    
         return redirect()->route('employees.index');
     }
 

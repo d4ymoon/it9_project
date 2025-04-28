@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Attendance Records</title>
+    <title>Payrolls</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -24,13 +24,13 @@
                 </div>
             </form>
             <div class="col d-flex justify-content-end">
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAttendanceModal">
-                    + Add Attendance
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#generatePayrollModal">
+                    + Generate Payroll
                 </button>
             </div>
         </div>
 
-        <!--- Attendance Table --->
+        <!--- Payroll Table --->
         <div class="row mt-2">
             <div class="col">
                 <table class="table table-striped table-hover table-bordered">
@@ -38,40 +38,46 @@
                         <tr>
                             <th>ID</th>
                             <th>Employee ID</th>
-                            <th>Date</th>
-                            <th>Morning Time In</th>
-                            <th>Morning Time Out</th>
-                            <th>Afternoon Time In</th>
-                            <th>Afternoon Time Out</th>
-                            <th>Status</th>
+                            <th>Pay Period</th>
+                            <th>Days Worked</th>
+                            <th>Basic Pay</th>
+                            <th>Overtime Pay</th>
+                            <th>Total Deductions</th>
+                            <th>Taxable Income</th>
+                            <th>Tax</th>
+                            <th>Net Salary</th>
                             <th style="width: 200px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($attendances as $attendance)
+                        @foreach ($payrolls as $payroll)
                             <tr>
-                                <td>{{ $attendance->id }}</td>
-                                <td>{{ $attendance->employee_id }}</td>
-                                <td>{{ $attendance->date }}</td>
-                                <td>{{ $attendance->morning_time_in }}</td>
-                                <td>{{ $attendance->morning_time_out }}</td>
-                                <td>{{ $attendance->afternoon_time_in }}</td>
-                                <td>{{ $attendance->afternoon_time_out }}</td>
-                                <td>{{ $attendance->status }}</td>
+                                <td>{{ $payroll->id }}</td>
+                                <td>{{ $payroll->employee_id }}</td>
+                                <td>{{ $payroll->pay_period }}</td>
+                                <td>{{ $payroll->days_worked }}</td>
+                                <td>{{ number_format($payroll->basic_pay, 2) }}</td>
+                                <td>{{ number_format($payroll->overtime_pay, 2) }}</td>
+                                <td>{{ number_format($payroll->total_deductions, 2) }}</td>
+                                <td>{{ number_format($payroll->taxable_income, 2) }}</td>
+                                <td>{{ number_format($payroll->tax, 2) }}</td>
+                                <td>{{ number_format($payroll->net_salary, 2) }}</td>
                                 <td class="text-nowrap">
-                                    <!-- Edit Button -->
-                                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editAttendanceModal{{ $attendance->id }}">
+
+                                    <!-- Example Edit Button -->
+                                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editPayrollModal{{ $payroll->id }}">
                                         Edit
                                     </button>
 
                                     <!-- Delete Form -->
-                                    <form action="{{ route('attendances.destroy', $attendance->id) }}" method="POST"
-                                        onsubmit="return confirm('Are you sure you want to delete this attendance record?');"
+                                    <form action="{{ route('payrolls.destroy', $payroll->id) }}" method="POST"
+                                        onsubmit="return confirm('Are you sure you want to delete this payroll record?');"
                                         style="display: inline-block; margin: 0;">
                                         @csrf
                                         @method('DELETE')
                                         <button class="btn btn-sm btn-danger" type="submit">Delete</button>
                                     </form>
+
                                 </td>
                             </tr>
                         @endforeach

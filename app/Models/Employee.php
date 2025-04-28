@@ -29,22 +29,6 @@ class Employee extends Model
         return $this->hasMany(Contribution::class);
     }
 
-    public function calculateDeductionsForPeriod($start, $end)
-    {
-        return $this->payrolls()
-            ->whereBetween('pay_period', [$start, $end])
-            ->with('deductions')
-            ->get()
-            ->sum(function ($payroll) {
-                return $payroll->deductions->sum('amount');
-            });
-    }
-
-public function calculateDeductions()
-{
-    // Example: Assuming you have a `Deductions` model and a relationship on `Employee` (e.g., employee hasMany deductions)
-    return $this->deductions()->sum('amount');
-}
 
 public function calculateSemiTax($taxable_income) {
     if ($taxable_income <= 10417) {

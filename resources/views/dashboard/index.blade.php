@@ -33,7 +33,7 @@
 
                     <li>
                         <h5 href="" class="nav-link align-middle px-2" onclick="toggleSidebar()" disabled style="user-select: none; cursor: pointer;">  
-                        <i class="bi bi-list"></i> <span class="sidebar-text align-items-center" disabled><b></b></span>
+                        <i class="bi bi-list"></i> <span class="sidebar-text align-items-center" disabled><b>Payroll System</b></span>
                         </h5>
                     </li>
                           
@@ -49,6 +49,11 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('contributiontypes.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('contributiontypes.index') }}')">
+                            <i class="bi bi-people"></i> <span class="sidebar-text">Contribution Types</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('employees.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('employees.index') }}')">
                             <i class="bi bi-people"></i> <span class="sidebar-text">Employees</span>
                         </a>
@@ -60,11 +65,16 @@
                     </li>
 
                     <li>
-                        <a href="{{ route('payrolls.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('payrolls.index') }}')">
-                            <i class="bi bi-file-text"></i> <span class="sidebar-text">Payrolls1</span>
+                        <a href="{{ route('attendance.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('attendance.index') }}')">
+                            <i class="bi bi-file-text"></i> <span class="sidebar-text">Attendance Records</span>
                         </a>
                     </li>
-                    
+
+                    <li>
+                        <a href="{{ route('attendance.create') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('attendance.create') }}')">
+                            <i class="bi bi-file-text"></i> <span class="sidebar-text">Employee attendace</span>
+                        </a>
+                    </li>
                    
                     </ul>
                     <hr>

@@ -13,6 +13,8 @@ class ContributionTypeController extends Controller
     public function index()
     {
         //
+        $contributionTypes = ContributionType::all();
+        return view('contribution.index', compact('contributionTypes'));
     }
 
     /**

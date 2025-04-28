@@ -48,6 +48,7 @@
                             <th style="width:110px">Contact #</th>
                             <th style="width:110px">Email</th>
                             <th style="width:220px">Name</th>
+                            <th style="width:220px">Shift</th>
                             <th style="width:220px">Hire Date</th>
                             <th style="width:220px">Bank Account</th>
                             <th style="width:275px">Actions</th>
@@ -60,6 +61,7 @@
                                 <td>{{ $employee->contact_number }}</td>
                                 <td>{{ $employee->email }}</td>
                                 <td>{{ $employee->name }}</td>
+                                <td>{{ $employee->shift_type }}</td>
                                 <td>{{ $employee->hire_date }}</td>
                                 <td>{{ $employee->bank_acct }}</td>
                                 <td class="text-nowrap" style="width:275px">
@@ -126,6 +128,15 @@
                                                         value="{{ $employee->email }}" required>
                                                 </div>
 
+                                                <div class="mb-3">
+                                                    <label for="shift_type{{ $employee->id }}" class="form-label">Shift</label>
+                                                    <select class="form-select" id="shift_type{{ $employee->id }}" name="shift_type" required>
+                                                        <option value="Morning" {{ $employee->shift_type == 'Morning' ? 'selected' : '' }}>Morning</option>
+                                                        <option value="Afternoon" {{ $employee->shift_type == 'Afternoon' ? 'selected' : '' }}>Afternoon</option>
+                                                        <option value="Fulltime" {{ $employee->shift_type == 'Fulltime' ? 'selected' : '' }}>Fulltime</option>
+                                                    </select>
+                                                </div>
+                                                
                                                 <div class="mb-3">
                                                     <label for="bank{{ $employee->id }}" class="form-label">Bank
                                                         Account</label>
@@ -330,10 +341,24 @@ aria-hidden="true">
                     </div>
                     <div class="col">
                         <select class="form-control" name="position_id" id="position_id" required>
-                            <option value="">Select Position</option>
+                            <option value="" disabled>Select Position</option>
                             @foreach ($positions as $position)
                                 <option value="{{ $position->id }}">{{ $position->name }}</option>
                             @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row mt-1">
+                    <div class="col">
+                        <label for="shift_type" class="form-label">Shift Type:</label>
+                    </div>
+                    <div class="col">
+                        <select class="form-control" name="shift_type" id="shift_type" required>
+                            <option value="" disabled selected>Select Shift</option>
+                            <option value="Morning">Morning</option>
+                            <option value="Afternoon">Afternoon</option>
+                            <option value="Fulltime" selected>Fulltime</option>
                         </select>
                     </div>
                 </div>

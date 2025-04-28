@@ -20,7 +20,7 @@ return new class extends Migration
             $table->date('hire_date');
             $table->string('bank_acct'); 
             $table->enum('status', ['active', 'inactive'])->default('active');
-
+            $table->enum('shift_type', ['Morning', 'Afternoon', 'Fulltime'])->default('Fulltime');
             $table->foreign('position_id')->references('id')->on('positions')->onUpdate('cascade')->onDelete('restrict');
             $table->timestamps();
         });

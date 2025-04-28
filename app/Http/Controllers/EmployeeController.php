@@ -46,6 +46,7 @@ class EmployeeController extends Controller
             'position_id' => 'required|exists:positions,id',
             'hire_date' => 'required|date',
             'bank_acct' => 'required|string|max:255',
+            'shift_type' => 'required|in:Morning,Afternoon,Fulltime',
         ]);
     
         $employee = Employee::create($validated);
@@ -98,6 +99,7 @@ class EmployeeController extends Controller
         $employee->contact_number = $request->contact_number;
         $employee->email = $request->email;
         $employee->bank_acct = $request->bank_acct;
+        $employee->shift_type = $request->shift_type;
     
         // Save the updated payroll
         $employee->save();

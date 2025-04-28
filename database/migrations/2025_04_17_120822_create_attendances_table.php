@@ -18,8 +18,8 @@ return new class extends Migration
             $table->time('morning_time_in')->nullable();      
             $table->time('morning_time_out')->nullable();   
             $table->time('afternoon_time_in')->nullable();
-            $table->time('afternoon_time_out')->nullable();  
-            $table->enum('status', ['Present', 'Absent', 'Leave'])->default('Present'); 
+            $table->datetime('afternoon_time_out')->nullable();  
+            $table->enum('status', ['Present', 'Absent', 'Leave'])->nullable()->default(null);
             $table->unique(['employee_id', 'date']);   // One record per day per employee
             $table->timestamps();
             

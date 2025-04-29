@@ -7,6 +7,7 @@ use App\Http\Controllers\PositionController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ContributionController;
 use App\Http\Controllers\ContributionTypeController;
+use App\Http\Controllers\ShiftController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -28,6 +29,8 @@ Route::get('/test', function () {
 
 Route::resource('positions', PositionController::class);
 Route::resource('employees', EmployeeController::class);
+
+Route::resource('shifts', ShiftController::class);
 Route::put('/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
 Route::resource('payrolls', PayrollController::class);
 

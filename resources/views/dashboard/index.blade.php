@@ -49,6 +49,11 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('shifts.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('shifts.index') }}')">
+                            <i class="bi bi-people"></i> <span class="sidebar-text">Shift Types</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('contributiontypes.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('contributiontypes.index') }}')">
                             <i class="bi bi-people"></i> <span class="sidebar-text">Contribution Types</span>
                         </a>

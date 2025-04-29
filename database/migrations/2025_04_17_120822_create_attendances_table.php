@@ -14,12 +14,14 @@ return new class extends Migration
         Schema::create('attendances', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('employee_id');
-            $table->date('date');                   
-            $table->time('morning_time_in')->nullable();      
-            $table->time('morning_time_out')->nullable();   
-            $table->time('afternoon_time_in')->nullable();
-            $table->datetime('afternoon_time_out')->nullable();  
-            $table->enum('status', ['Present', 'Absent', 'Leave'])->nullable()->default(null);
+            $table->date('date');  // The day the shift started
+
+            $table->dateTime('time_in')->nullable();      // Start of working time
+            $table->dateTime('break_out')->nullable();    // Start of break (optional)
+            $table->dateTime('break_in')->nullable();     // End of break (optional)
+            $table->dateTime('time_out')->nullable();     // End of working time
+
+            $table->string('status')->nullable();       
             $table->unique(['employee_id', 'date']);   // One record per day per employee
             $table->timestamps();
             

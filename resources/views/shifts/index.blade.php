@@ -57,14 +57,27 @@
             </div>
         @endif
 
+        @if ($errors->any())
+            <div class="alert mt-2 alert-danger alert-dismissible fade show" role="alert">
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
         <div class="row mt-2">
             <div class="col">
                 <table class="table table-striped table-hover table-bordered ">
                     <thead>
                         <tr>
                             <th>Shift Name</th>
-                            <th>Shift Start Time</th>
-                            <th>Shift End Time</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>Break Start Time</th>
+                            <th>Break End Time</th>
                             <th style="width:275px">Actions</th>
                         </tr>
                     </thead>
@@ -72,8 +85,10 @@
                         @foreach ($shifts as $shift)
                             <tr>
                                 <td>{{ $shift->name }}</td>
-                                <td>{{ $shift->shift_start_time }}</td>
-                                <td>{{ $shift->shift_end_time }}</td>
+                                <td>{{ $shift->start_time }}</td>
+                                <td>{{ $shift->end_time }}</td>
+                                <td>{{ $shift->break_start_time ?? 'N/A' }}</td>
+                                <td>{{ $shift->break_end_time ?? 'N/A' }}</td>
                                 <td class="text-nowrap" style="width:275px">
 
                                     <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
@@ -91,47 +106,90 @@
                                 </td>
                             </tr>
                             <!-- Edit Shift Modal -->
-                            <div class="modal fade" id="editShiftModal{{ $shift->id }}" tabindex="-1"
-                                aria-labelledby="editShiftModallLabel{{ $shift->id }}" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content">
+<div class="modal fade" id="editShiftModal{{ $shift->id }}" tabindex="-1" aria-labelledby="editShiftModalLabel{{ $shift->id }}" aria-hidden="true">
+    <div class="modal-dialog modal modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editShiftModalLabel{{ $shift->id }}">Edit Shift: {{ $shift->name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+            <form action="{{ route('shifts.update', $shift->id) }}" method="POST">
+                @csrf
+                @method('PUT')
+            
+                <!-- Shift Name -->
+                <div class="row mt-3">
+                    <div class="col">
+                        <label for="name" class="form-label">Shift Name:</label>
+                    </div>
+                    <div class="col">
+                        <input class="form-control" type="text" name="name" id="name" value="{{ $shift->name }}" required>
+                    </div>
+                </div>
+            
+                <!-- Shift Start Time -->
+<div class="row mt-3">
+    <div class="col">
+        <label for="shift_start_time" class="form-label">Shift Start Time:</label>
+    </div>
+    <div class="col">
+        <input class="form-control" type="time" name="start_time" id="shift_start_time" value="{{ old('start_time', $shift->start_time ?? '') }}" required>
+    </div>
+</div>
 
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="editShiftModalLabel{{ $shift->id }}">Edit
-                                                shift</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                aria-label="Close"></button>
-                                        </div>
+<!-- Shift End Time -->
+<div class="row mt-3">
+    <div class="col">
+        <label for="shift_end_time" class="form-label">Shift End Time:</label>
+    </div>
+    <div class="col">
+        <input class="form-control" type="time" name="end_time" id="shift_end_time" value="{{ old('end_time', $shift->end_time ?? '') }}" required>
+    </div>
+</div>
 
-                                        <form action="{{ route('shifts.update', $shift->id) }}" method="POST"
-                                            id="shifts{{ $shift->id }}">
-                                            @csrf
-                                            @method('PUT')
+<!-- Break Start Time -->
+<div class="row mt-3">
+    <div class="col">
+        <label for="break_start_time" class="form-label">Break Start Time:</label>
+    </div>
+    <div class="col">
+        <input class="form-control" type="time" name="break_start_time" id="break_start_time" value="{{ old('break_start_time', $shift->break_start_time ?? '') }}">
+    </div>
+</div>
 
-                                            <div class="modal-body">
-                                                <div class="mb-3">
-                                                    <label for="name{{ $shifts->id }}"
-                                                        class="form-label">shift Name</label>
-                                                    <input type="text" class="form-control"
-                                                        id="name{{ $shift->id }}" name="name"
-                                                        value="{{ $shift->name }}" required>
-                                                </div>
+<!-- Break End Time -->
+<div class="row mt-3">
+    <div class="col">
+        <label for="break_end_time" class="form-label">Break End Time:</label>
+    </div>
+    <div class="col">
+        <input class="form-control" type="time" name="break_end_time" id="break_end_time" value="{{ old('break_end_time', $shift->break_end_time ?? '') }}">
+    </div>
+</div>
+            
+                <!-- Shift Description (Optional) -->
+                <div class="row mt-3">
+                    <div class="col">
+                        <label for="description" class="form-label">Description:</label>
+                    </div>
+                    <div class="col">
+                        <textarea class="form-control mb-3" name="description" id="description" rows="2">{{ $shift->description }}</textarea>
+                    </div>
+                </div>
+            
+                <!-- Modal Footer -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
 
-                                              
-                                        
-                                            </div>
+        </div>
+    </div>
+</div>
 
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-outline-secondary"
-                                                    data-bs-dismiss="modal">Cancel</button>
-                                                <button type="submit" class="btn btn-primary"  onclick="return confirmUpdate({{ $shift->id }})">Update
-                                                    shift</button>
-                                            </div>
-                                        </form>
-
-                                    </div>
-                                </div>
-                            </div>
                         @endforeach
 
 
@@ -147,48 +205,85 @@
     <!--- NEW SHIFT MODAL --->
     <div class="modal fade" id="newShiftmodal" tabindex="-1" aria-labelledby="exampleModalLabel"
         aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" style="max-width: 400px; width: 100%;">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5 h5" id="exampleModalLabel">Add new shift</h1>
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">Add new shift</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form action="{{ route('shifts.store') }}" method="POST">
                         @csrf
+                    
+                        <!-- Shift Name -->
                         <div class="row mt-3">
                             <div class="col">
-                                <label for="name" class="form-label h5">Shift Name:</label>
+                                <label for="name" class="form-label">Shift Name:</label>
                             </div>
                             <div class="col">
                                 <input class="form-control" type="text" name="name" id="name" required>
                             </div>
                         </div>
+                    
+                        <!-- Shift Start Time -->
+<div class="row mt-3">
+    <div class="col">
+        <label for="shift_start_time" class="form-label">Shift Start Time:</label>
+    </div>
+    <div class="col">
+        <input class="form-control" type="time" name="start_time" id="shift_start_time" required>
+    </div>
+</div>
 
+<!-- Shift End Time -->
+<div class="row mt-3">
+    <div class="col">
+        <label for="shift_end_time" class="form-label">Shift End Time:</label>
+    </div>
+    <div class="col">
+        <input class="form-control" type="time" name="end_time" id="shift_end_time" required>
+    </div>
+</div>
+
+<hr>
+
+<!-- Break Start Time (Optional) -->
+<div class="row mt-3">
+    <div class="col">
+        <label for="break_start_time" class="form-label">Break Start Time:</label>
+    </div>
+    <div class="col">
+        <input class="form-control" type="time" name="break_start_time" id="break_start_time">
+    </div>
+</div>
+
+<!-- Break End Time (Optional) -->
+<div class="row mt-3">
+    <div class="col">
+        <label for="break_end_time" class="form-label">Break End Time:</label>
+    </div>
+    <div class="col">
+        <input class="form-control" type="time" name="break_end_time" id="break_end_time">
+    </div>
+</div>
+
+                    
+                        <!-- Shift Description (Optional) -->
                         <div class="row mt-3">
                             <div class="col">
-                                <label for="shift_start_time" class="form-label h5">Shift start time:</label>
+                                <label for="description" class="form-label">Description:</label>
                             </div>
                             <div class="col">
-                                <input class="form-control" type="time" name="shift_start_time" id="shift_start_time" required>
+                                <textarea class="form-control mb-3" name="description" id="description" rows="2"></textarea>
                             </div>
                         </div>
-
-                        <div class="row mt-3">
-                            <div class="col">
-                                <label for="shift_end_time" class="form-label h5">Shift end time:</label>
-                            </div>
-                            <div class="col">
-                                <input class="form-control" type="time" name="shift_end_time" id="shift_end_time" required>
-                            </div>
+                    
+                        <!-- Modal Footer -->
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save</button>
                         </div>
-
-                </div>
-                <div class="modal-footer ">
-                    <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save</button>
                     </form>
-                </div>
             </div>
         </div>
     </div>

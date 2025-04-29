@@ -7,5 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 class Shift extends Model
 {
     //
-    protected $fillable = ['name', 'shift_start_time', 'shift_end_time'];
+    protected $fillable = ['name','start_time','break_start_time','break_end_time','end_time','description','is_active'];
+
 }

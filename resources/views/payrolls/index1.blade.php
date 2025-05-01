@@ -5,10 +5,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Payrolls</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="style.css">
 </head>
 
 <body class="default-padding theme1">
@@ -25,8 +23,8 @@
             </form>
             <div class="col d-flex justify-content-end">
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#generatePayrollModal">
-                    + Generate Payroll
-                </button>
+                    Generate Payroll
+                  </button>
             </div>
         </div>
 
@@ -88,9 +86,119 @@
 
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-w76A2z02tPqdjfv6jP6lG0FfDOMTD6zYtN6V8io9xMy5D/t93wCR0V5p5hfvZ1jr" crossorigin="anonymous">
+    <!-- Modal -->
+<div class="modal fade" id="generatePayrollModal" tabindex="-1" aria-labelledby="generatePayrollModalLabel" aria-hidden="true">
+    <div class="modal-dialog"> <!-- modal-lg for wider form -->
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="generatePayrollModalLabel">Generate Payroll</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+  
+          <form action="{{ route('payrolls.generate') }}" method="POST">
+            @csrf
+  
+            <!-- Payroll Frequency -->
+            <div class="form-group">
+              <label for="pay_frequency">Pay Frequency:</label>
+              <select name="pay_frequency" id="pay_frequency" class="form-control" required>
+                <option value="monthly" selected>Monthly</option>
+                <option value="semi_monthly">Semi-Monthly</option>
+              </select>
+            </div>
+  
+            <!-- Semi-Monthly Option -->
+            <div class="form-group mt-2" id="semiMonthlyOptions" style="display: none;">
+              <label>Select Semi-Monthly Pay Period:</label>
+              <div class="d-flex gap-2">
+                <select name="pay_month" id="pay_month_semi" class="form-control" required>
+                  <option value="" disabled selected>Month</option>
+                  @foreach(range(1, 12) as $month)
+                    <option value="{{ str_pad($month, 2, '0', STR_PAD_LEFT) }}">
+                      {{ \Carbon\Carbon::create()->month($month)->format('F') }}
+                    </option>
+                  @endforeach
+                </select>
+  
+                <select name="pay_year" id="pay_year_semi" class="form-control" required>
+                  <option value="" disabled selected>Year</option>
+                  @foreach(range(now()->year, now()->year + 5) as $year)
+                    <option value="{{ $year }}">{{ $year }}</option>
+                  @endforeach
+                </select>
+  
+                <select name="pay_period_choice" id="pay_period_choice" class="form-control" required>
+                  <option value="first_half">1st to 15th</option>
+                  <option value="second_half">16th to End</option>
+                </select>
+              </div>
+            </div>
+  
+            <!-- Monthly Option -->
+            <div class="form-group mt-2" id="monthlyOptions" style="display: none;">
+              <label>Select Month:</label>
+              <div class="d-flex gap-2">
+                <select name="pay_month" id="pay_month" class="form-control" required>
+                  <option value="" disabled selected>Month</option>
+                  @foreach(range(1, 12) as $month)
+                    <option value="{{ str_pad($month, 2, '0', STR_PAD_LEFT) }}">
+                      {{ \Carbon\Carbon::create()->month($month)->format('F') }}
+                    </option>
+                  @endforeach
+                </select>
+  
+                <select name="pay_year" id="pay_year" class="form-control" required>
+                  <option value="" disabled selected>Year</option>
+                  @foreach(range(now()->year, now()->year + 5) as $year)
+                    <option value="{{ $year }}">{{ $year }}</option>
+                  @endforeach
+                </select>
+              </div>
+            </div>
+  
+            <div class="modal-footer mt-3">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary">Generate Payroll</button>
+            </div>
+  
+          </form>
+  
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const currentDate = new Date();
+      const currentMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const currentYear = currentDate.getFullYear();
+    
+      document.getElementById('pay_month').value = currentMonth;
+      document.getElementById('pay_year').value = currentYear;
+    
+      updatePayOptions();
+    });
+    
+    function updatePayOptions() {
+      const isSemiMonthly = document.getElementById('pay_frequency').value === 'semi_monthly';
+    
+      document.getElementById('semiMonthlyOptions').style.display = isSemiMonthly ? 'block' : 'none';
+      document.getElementById('monthlyOptions').style.display = !isSemiMonthly ? 'block' : 'none';
+    
+      const monthlyInputs = document.querySelectorAll('#monthlyOptions select');
+      const semiMonthlyInputs = document.querySelectorAll('#semiMonthlyOptions select');
+    
+      monthlyInputs.forEach(input => input.disabled = isSemiMonthly);
+      semiMonthlyInputs.forEach(input => input.disabled = !isSemiMonthly);
+    }
+    
+    document.getElementById('pay_frequency').addEventListener('change', updatePayOptions);
     </script>
+    
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js" integrity="sha384-k6d4wzSIapyDyv1kpU366/PK5hCdSbCRGRCMv+eplOQJWyd1fbcAu9OCUj5zNLiq" crossorigin="anonymous"></script>
 </body>
 
 </html>

@@ -7,6 +7,7 @@ use App\Models\Employee;
 use App\Models\Position;
 use App\Models\Contribution;
 use App\Models\ContributionType;
+use App\Models\Shift;
 
 class EmployeeController extends Controller
 {
@@ -14,12 +15,13 @@ class EmployeeController extends Controller
      * Display a listing of the resource.
      */
     public function index()
-    {     
+    {   
+        $shifts = Shift::all();
         $positions = Position::all();
         $employees = Employee::with(['payroll', 'contributions.contributionType'])->get();
         $contributionTypes = ContributionType::all();
 
-        return view('employees.index', compact('employees', 'positions', 'contributionTypes'));
+        return view('employees.index', compact('employees', 'positions', 'contributionTypes', 'shifts'));
     }
 
     /**
@@ -43,12 +45,13 @@ class EmployeeController extends Controller
             'position_id' => 'required|exists:positions,id',
             'hire_date' => 'required|date',
             'bank_acct' => 'required|string|max:255',
-            'shift_type' => 'required|in:Morning,Afternoon,Fulltime',
+            'shift_id' => 'required|exists:shifts,id',
         ]);
     
         $employee = Employee::create($validated);
 
-        return redirect()->route('employees.index');
+        return redirect()->route('employees.index')->with('success', 'Employee added successfully!');
+
     }
 
     /**

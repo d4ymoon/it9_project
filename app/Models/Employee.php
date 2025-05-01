@@ -7,16 +7,21 @@ use Illuminate\Database\Eloquent\Model;
 class Employee extends Model
 {
     //
-    protected $fillable = ['name', 'contact_number', 'email', 'position_id', 'shift_type', 'hire_date', 'bank_acct', 'status'];
+    protected $fillable = ['name', 'contact_number', 'email', 'position_id', 'shift_id', 'hire_date', 'bank_acct', 'status'];
 
     public function payroll()
     {
-    return $this->hasOne(Payroll::class);
+    return $this->hasMany(Payroll::class);
     }
 
     public function position()
     {
     return $this->belongsTo(Position::class);
+    }
+
+    public function shift()
+    {
+        return $this->belongsTo(Shift::class);
     }
 
     public function attendances()

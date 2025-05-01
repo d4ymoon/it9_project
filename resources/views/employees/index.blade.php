@@ -39,262 +39,254 @@
             </div>
         </div>
 
-        <div class="row mt-2">
-            <div class="col">
-                <table class="table table-striped table-hover table-bordered ">
-                    <thead>
-                        <tr>
-                            <th style="width:120px">Employee ID</th>
-                            <th style="width:110px">Contact #</th>
-                            <th style="width:110px">Email</th>
-                            <th style="width:220px">Name</th>
-                            <th style="width:220px">Shift</th>
-                            <th style="width:220px">Hire Date</th>
-                            <th style="width:220px">Bank Account</th>
-                            <th style="width:275px">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($employees as $employee)
-                            <tr>
-                                <td>{{ $employee->id }}</td>
-                                <td>{{ $employee->contact_number }}</td>
-                                <td>{{ $employee->email }}</td>
-                                <td>{{ $employee->name }}</td>
-                                <td>{{ $employee->shift_type }}</td>
-                                <td>{{ $employee->hire_date }}</td>
-                                <td>{{ $employee->bank_acct }}</td>
-                                <td class="text-nowrap" style="width:275px">
+        @if (session('success'))
+        <div class="alert mt-2 alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
 
-                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
-                                        data-bs-target="#editEmployeeModal{{ $employee->id }}">
-                                        Edit employee
-                                    </button>
+    @if (session('error'))
+        <div class="alert mt-2 alert-danger alert-dismissible fade show" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
 
-                                    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editEmployeeContribution">
-                                        Edit Contributions
-                                    </button>
+    @if (session('info'))
+        <div class="alert mt-2 alert-info alert-dismissible fade show" role="alert">
+            {{ session('info') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    @if ($errors->any())
+        <div class="alert mt-2 alert-danger alert-dismissible fade show" role="alert">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
 
 
-                                    <form action="{{ route('employees.destroy', $employee->id) }}" method="POST"
-                                        onsubmit="return confirm('Are you sure you want to delete this employee?');"
-                                        style="display: inline-block; margin: 0;">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button class="btn btn-sm btn-danger" type="submit">Delete</button>
-                                    </form>
-                                </td>
-                            </tr>
-                            <!-- Edit Employee Modal -->
-                            <div class="modal fade" id="editEmployeeModal{{ $employee->id }}" tabindex="-1"
-                                aria-labelledby="editEmployeeModalLabel{{ $employee->id }}" aria-hidden="true">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="editEmployeeModalLabel{{ $employee->id }}">Edit
-                                                Employee</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                aria-label="Close"></button>
+    <div class="row mt-2">
+        <div class="col">
+            <table class="table table-striped table-hover table-bordered">
+                <thead>
+                    <tr>
+                        <th style="width:120px">ID</th>
+                        <th style="width:110px">Contact #</th>
+                        <th style="width:110px">Email</th>
+                        <th style="width:220px">Name</th>
+                        <th style="width:220px">Shift</th>
+                        <th style="width:220px">Hire Date</th>
+                        <th style="width:220px">Bank Account</th>
+                        <th style="width:275px">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($employees as $employee)
+                    <tr>
+                        <td>{{ $employee->id }}</td>
+                        <td>{{ $employee->contact_number }}</td>
+                        <td>{{ $employee->email }}</td>
+                        <td>{{ $employee->name }}</td>
+                        <td>{{ $employee->shift_type }}</td>
+                        <td>{{ $employee->hire_date }}</td>
+                        <td>{{ $employee->bank_acct }}</td>
+                        <td class="text-nowrap" style="width:275px">
+                            <!-- Edit Employee Button -->
+                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                                data-bs-target="#editEmployeeModal{{ $employee->id }}">
+                                Edit Employee
+                            </button>
+    
+                            <!-- Edit Contribution Button -->
+                            <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal"
+                                data-bs-target="#editEmployeeContribution{{ $employee->id }}">
+                                Edit Contributions
+                            </button>
+    
+                            <!-- Delete Employee -->
+                            <form action="{{ route('employees.destroy', $employee->id) }}" method="POST"
+                                onsubmit="return confirm('Are you sure you want to delete this employee?');"
+                                style="display: inline-block; margin: 0;">
+                                @csrf
+                                @method('DELETE')
+                                <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+    
+                    <!-- Edit Employee Modal -->
+                    <div class="modal fade" id="editEmployeeModal{{ $employee->id }}" tabindex="-1"
+                        aria-labelledby="editEmployeeModalLabel{{ $employee->id }}" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <form action="{{ route('employees.update', $employee->id) }}" method="POST">
+                                    @csrf
+                                    @method('PUT')
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Edit Employee</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label for="name{{ $employee->id }}" class="form-label">Name</label>
+                                            <input type="text" class="form-control" name="name"
+                                                id="name{{ $employee->id }}" value="{{ $employee->name }}" required>
                                         </div>
-
-                                        <form action="{{ route('employees.update', $employee->id) }}" method="POST">
+                                        <div class="mb-3">
+                                            <label for="contact{{ $employee->id }}" class="form-label">Contact Number</label>
+                                            <input type="text" class="form-control" name="contact_number"
+                                                id="contact{{ $employee->id }}" value="{{ $employee->contact_number }}"
+                                                maxlength="11" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="email{{ $employee->id }}" class="form-label">Email</label>
+                                            <input type="email" class="form-control" name="email"
+                                                id="email{{ $employee->id }}" value="{{ $employee->email }}" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="shift_type{{ $employee->id }}" class="form-label">Shift</label>
+                                            <select class="form-select" name="shift_type" id="shift_type{{ $employee->id }}" required>
+                                                <option value="Morning" {{ $employee->shift_type == 'Morning' ? 'selected' : '' }}>Morning</option>
+                                                <option value="Afternoon" {{ $employee->shift_type == 'Afternoon' ? 'selected' : '' }}>Afternoon</option>
+                                                <option value="Fulltime" {{ $employee->shift_type == 'Fulltime' ? 'selected' : '' }}>Fulltime</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="bank{{ $employee->id }}" class="form-label">Bank Account</label>
+                                            <input type="text" class="form-control" name="bank_acct"
+                                                id="bank{{ $employee->id }}" value="{{ $employee->bank_acct }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-primary">Update Employee</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+    
+                    <!-- Edit Contribution Modal (per employee) -->
+                    <div class="modal fade" id="editEmployeeContribution{{ $employee->id }}" tabindex="-1"
+                        aria-labelledby="editEmployeeContributionLabel{{ $employee->id }}" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+    
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Edit Employee Contributions</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+    
+                                <div class="modal-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <form action="{{ route('contributions.store') }}" method="POST"
+                                            class="d-flex align-items-center">
                                             @csrf
-                                            @method('PUT')
-
-                                            <div class="modal-body">
-                                                <div class="mb-3">
-                                                    <label for="name{{ $employee->id }}"
-                                                        class="form-label">Name</label>
-                                                    <input type="text" class="form-control"
-                                                        id="name{{ $employee->id }}" name="name"
-                                                        value="{{ $employee->name }}" required>
-                                                </div>
-
-                                                <div class="mb-3">
-                                                    <label for="contact{{ $employee->id }}" class="form-label">Contact
-                                                        Number</label>
-                                                    <input type="text" class="form-control"
-                                                        id="contact{{ $employee->id }}" name="contact_number"
-                                                        value="{{ $employee->contact_number }}" required
-                                                        maxlength="11">
-                                                </div>
-
-                                                <div class="mb-3">
-                                                    <label for="email{{ $employee->id }}"
-                                                        class="form-label">Email</label>
-                                                    <input type="email" class="form-control"
-                                                        id="email{{ $employee->id }}" name="email"
-                                                        value="{{ $employee->email }}" required>
-                                                </div>
-
-                                                <div class="mb-3">
-                                                    <label for="shift_type{{ $employee->id }}" class="form-label">Shift</label>
-                                                    <select class="form-select" id="shift_type{{ $employee->id }}" name="shift_type" required>
-                                                        <option value="Morning" {{ $employee->shift_type == 'Morning' ? 'selected' : '' }}>Morning</option>
-                                                        <option value="Afternoon" {{ $employee->shift_type == 'Afternoon' ? 'selected' : '' }}>Afternoon</option>
-                                                        <option value="Fulltime" {{ $employee->shift_type == 'Fulltime' ? 'selected' : '' }}>Fulltime</option>
-                                                    </select>
-                                                </div>
-                                                
-                                                <div class="mb-3">
-                                                    <label for="bank{{ $employee->id }}" class="form-label">Bank
-                                                        Account</label>
-                                                    <input type="text" class="form-control"
-                                                        id="bank{{ $employee->id }}" name="bank_acct"
-                                                        value="{{ $employee->bank_acct }}" required>
-                                                </div>
-                                            </div>
-
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-outline-secondary"
-                                                    data-bs-dismiss="modal">Cancel</button>
-                                                <button type="submit" class="btn btn-primary">Update
-                                                    Employee</button>
-                                            </div>
+                                            <input type="hidden" name="employee_id" value="{{ $employee->id }}">
+    
+                                            <select name="contribution_type_id" class="form-select form-select-sm me-2" style="width: 160px;" required>
+                                                <option value="" disabled selected>-- Select Type --</option>
+                                                @foreach($contributionTypes as $type)
+                                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                                @endforeach
+                                            </select>
+    
+                                            <select name="calculation_type" class="form-select form-select-sm me-2" style="width: 100px;" required>
+                                                <option value="percent" selected>Percent</option>
+                                                <option value="fixed">Fixed</option>
+                                            </select>
+    
+                                            <input type="number" step="0.01" name="value" class="form-control form-control-sm me-2"
+                                                style="width: 120px;" placeholder="Value" required>
+    
+                                            <button type="submit" class="btn btn-success btn-sm me-2">Add</button>
                                         </form>
-
+    
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal"
+                                            data-bs-target="#addContributionType">
+                                            + New Contribution Type
+                                        </button>
+                                    </div>
+    
+                                    <div id="contributions_list">
+                                        @if($employee->contributions->isEmpty())
+                                            <p class="text-muted">No contributions added yet.</p>
+                                        @else
+                                            <ul class="list-group">
+                                                @foreach($employee->contributions as $contribution)
+                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                    <span>{{ $contribution->contributionType->name }}</span>
+                                                    <div class="d-flex align-items-center" style="gap: 8px;">
+                                                        <form action="{{ route('contributions.update', $contribution) }}"
+                                                            method="POST" class="d-flex align-items-center">
+                                                            @csrf
+                                                            @method('PUT')
+                                                            <select name="calculation_type" class="form-select form-select-sm me-2" style="width: 100px;">
+                                                                <option value="fixed" {{ $contribution->calculation_type === 'fixed' ? 'selected' : '' }}>Fixed</option>
+                                                                <option value="percent" {{ $contribution->calculation_type === 'percent' ? 'selected' : '' }}>Percent</option>
+                                                            </select>
+                                                            <input type="number" step="0.01" name="value"
+                                                                value="{{ $contribution->value }}" class="form-control form-control-sm me-2"
+                                                                style="width: 100px;" required>
+                                                            <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                                                        </form>
+    
+                                                        <form action="{{ route('contributions.destroy', $contribution->id) }}"
+                                                            method="POST">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                                        </form>
+                                                    </div>
+                                                </li>
+                                                @endforeach
+                                            </ul>
+                                        @endif
                                     </div>
                                 </div>
-                            </div>
-                      
-
-
-                    </tbody>
-                </table>
-
-            </div>
-        </div>
-    </div>
-
     
-
-    <!-- Modal -->
-<div class="modal fade" id="editEmployeeContribution" tabindex="-1" aria-labelledby="editEmployeeContributionLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-
-            <div class="modal-header">
-                <h5 class="modal-title" id="editEmployeeContributionLabel">Edit Employee Contributions</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-
-            <div class="modal-body">
-                <!-- Add Contribution Form -->
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <!-- Left: Form -->
-                    <div class="d-flex align-items-center">
-                        <form action="{{ route('contributions.store') }}" method="POST" class="d-flex align-items-center">
-                            @csrf
-                            <input type="hidden" name="employee_id" value="{{ $employee->id }}">
-                
-                            <!-- Contribution Type -->
-                            <select name="contribution_type_id" class="form-select form-select-sm me-2" style="width: 160px;" required>
-                                <option value="" disabled selected>-- Select Type --</option>
-                                @foreach($contributionTypes as $type)
-                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
-                                @endforeach
-                            </select>
-                
-                            <!-- Calculation Type -->
-                            <select name="calculation_type" class="form-select form-select-sm me-2" style="width: 100px;" required> 
-                                <option value="percent" selected>Percent</option>
-                                <option value="fixed">Fixed</option>
-                            </select>
-                
-                            <!-- Value -->
-                            <input type="number" step="0.01" name="value" class="form-control form-control-sm me-2" style="width: 120px;" placeholder="Value" required>
-                
-                            <!-- Add Button -->
-                            <button type="submit" class="btn btn-success btn-sm me-2">Add</button>                    
-                        </form>
+                            </div>
+                        </div>
                     </div>
-                
-                    <div class="vr mx-2"></div>
-                    <div>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addContributionType">
-                            + New Contribution Type
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Contributions List -->
-                <div id="contributions_list">
-                    @if($employee->contributions->isEmpty())
-                        <p class="text-muted">No contributions added yet.</p>
-                    @else
-                        <ul class="list-group">
-                            @foreach($employee->contributions as $contribution)
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <!-- Label -->
-                                    <span>
-                                        {{ $contribution->contributionType->name }}
-                                    </span>
-
-                                    <!-- Actions -->
-                                    <div class="d-flex align-items-center" style="gap: 8px;">
-                                        <!-- Update -->
-                                        <form action="{{ route('contributions.update', $contribution) }}" method="POST" class="d-flex align-items-center">
-                                            @csrf
-                                            @method('PUT')
-                                          
-                                            <select name="calculation_type" class="form-select form-select-sm me-2" style="width: 100px;">
-                                              <option value="fixed"  {{ $contribution->calculation_type==='fixed'  ? 'selected':'' }}>Fixed</option>
-                                              <option value="percent"{{ $contribution->calculation_type==='percent'? 'selected':'' }}>Percent</option>
-                                            </select>
-                                          
-                                            <input type="number" step="0.01" name="value" value="{{ $contribution->value }}"
-                                                   class="form-control form-control-sm me-2" style="width: 100px;" required>
-                                          
-                                            <button type="submit" class="btn btn-primary btn-sm">Update</button>
-                                          </form>
-
-                                        <!-- Delete -->
-                                        <form action="{{ route('contributions.destroy', $contribution->id) }}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                                        </form>
-                                    </div>
-                                </li>
-                            @endforeach
-                        </ul>
-                    @endif
-                </div>
-            </div>
-
+                    @endforeach
+                </tbody>
+            </table>
         </div>
     </div>
-</div>
-
-        <!-- Add Contribution Type Modal -->
-        <div class="modal fade" id="addContributionType" tabindex="-1" aria-labelledby="addContributionTypeModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-sm  modal-dialog-centered">
-              <div class="modal-content">
-                
-                <div class="modal-header">
-                  <h5 class="modal-title" id="addContributionTypeModalLabel">Add New Contribution Type</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                
+    
+    <!-- Add Contribution Type Modal (global, outside foreach) -->
+    <div class="modal fade" id="addContributionType" tabindex="-1" aria-labelledby="addContributionTypeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
                 <form action="{{ route('contributiontypes.store') }}" method="POST">
-                  @csrf
-                  <div class="modal-body">
-                    <div class="mb-3">
-                      <label for="contribution_type_name" class="form-label">Contribution Type Name</label>
-                      <input type="text" name="name" class="form-control" id="contribution_type_name" placeholder="e.g. SSS" required>
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addContributionTypeModalLabel">Add New Contribution Type</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
                     </div>
-                  </div>
-                  
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add</button>
-                  </div>
+                    <div class="modal-body">
+                        <label for="contribution_type_name" class="form-label">Contribution Type Name</label>
+                        <input type="text" name="name" class="form-control" id="contribution_type_name" placeholder="e.g. SSS" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add</button>
+                    </div>
                 </form>
-          
-              </div>
             </div>
-          </div>  @endforeach
+        </div>
+    </div>
+    
 <!--- NEW EMPLOYEE MODAL --->
 <div class="modal fade" id="newtenantmodal" tabindex="-1" aria-labelledby="exampleModalLabel"
 aria-hidden="true">
@@ -341,7 +333,7 @@ aria-hidden="true">
                     </div>
                     <div class="col">
                         <select class="form-control" name="position_id" id="position_id" required>
-                            <option value="" disabled>Select Position</option>
+                            <option value="" disabled selected>Select Position</option>
                             @foreach ($positions as $position)
                                 <option value="{{ $position->id }}">{{ $position->name }}</option>
                             @endforeach
@@ -351,17 +343,18 @@ aria-hidden="true">
 
                 <div class="row mt-1">
                     <div class="col">
-                        <label for="shift_type" class="form-label">Shift Type:</label>
+                        <label for="shift_id" class="form-label">Shift Type:</label>
                     </div>
                     <div class="col">
-                        <select class="form-control" name="shift_type" id="shift_type" required>
+                        <select class="form-control" name="shift_id" id="shift_id" required>
                             <option value="" disabled selected>Select Shift</option>
-                            <option value="Morning">Morning</option>
-                            <option value="Afternoon">Afternoon</option>
-                            <option value="Fulltime" selected>Fulltime</option>
+                            @foreach ($shifts as $shift)
+                                <option value="{{ $shift->id }}">{{ $shift->name ?? 'Shift #' . $shift->id }}</option>
+                            @endforeach
                         </select>
                     </div>
                 </div>
+                
 
                 <div class="row mt-1">
                     <div class="col">

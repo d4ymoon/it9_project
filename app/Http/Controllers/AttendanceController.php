@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Attendance;
+use App\Models\Employee;
 use Carbon\Carbon; 
 
 class AttendanceController extends Controller
@@ -30,76 +31,70 @@ class AttendanceController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+
+public function store(Request $request)
 {
-    $validated = $request->validate([
+    $request->validate([
         'employee_id' => 'required|exists:employees,id',
-        'shift' => 'required|in:morning,afternoon',
     ]);
-    
-    $employeeId = $validated['employee_id'];
-    $shift = $validated['shift'];
-    $today = Carbon::today('Asia/Singapore');
+
+    $employee = Employee::with('shift')->findOrFail($request->employee_id);
+    $shift = $employee->shift;
+
+    if (!$shift) {
+        return back()->with('error', 'Employee has no shift assigned.');
+    }
+
     $now = Carbon::now('Asia/Singapore');
-    $currentTime = Carbon::now('Asia/Singapore');
+    $today = $now->toDateString();
 
-    // Fetch or create today's attendance record
-    $attendance = Attendance::firstOrNew([
-        'employee_id' => $employeeId,
-        'date' => $today
+    // Construct shift time slots for today in Singapore timezone
+    $start = Carbon::parse("$today {$shift->start_time}", 'Asia/Singapore');
+    $breakStart = Carbon::parse("$today {$shift->break_start_time}", 'Asia/Singapore');
+    $breakEnd = Carbon::parse("$today {$shift->break_end_time}", 'Asia/Singapore');
+    $end = Carbon::parse("$today {$shift->end_time}", 'Asia/Singapore');
+
+    // Retrieve or create today's attendance
+    $attendance = Attendance::firstOrCreate([
+        'employee_id' => $employee->id,
+        'date' => $today,
     ]);
 
-    if ($shift == 'morning') {
-        if (!$attendance->morning_time_in) {
-            // Morning login
-            $attendance->morning_time_in = $currentTime;
-            $attendance->status = null; // Status remains null until logout
-            $attendance->save();
-            return redirect()->back()->with('success', 'Morning Time In recorded.');
-        }
-
-        if ($attendance->morning_time_in && !$attendance->morning_time_out) {
-            // Check if logout is still allowed (before midnight)
-            if ($currentTime->isSameDay($attendance->morning_time_in)) {
-                $attendance->morning_time_out = $currentTime;
-                $attendance->status = 'Present'; // Only mark present if logged out within same day
-                $attendance->save();
-                return redirect()->back()->with('success', 'Morning Time Out recorded.');
-            } else {
-                return redirect()->back()->with('error', 'Cannot logout for morning shift. Deadline passed.');
-            }
-        }
-
-        return redirect()->back()->with('error', 'Morning attendance already completed.');
+    // Determine what to log
+    if (
+        !$attendance->time_in &&
+        (
+            $now->between($start->subHour(), $breakStart) ||         // First half
+            $now->between($breakEnd, $end)                           // Second half (partial/afternoon)
+        )
+    ) {
+        $attendance->time_in = $now;
+        $msg = 'Time-in recorded.';
+    } elseif (
+        !$attendance->break_out &&
+        $now->between($breakStart->subHour(), $breakStart->addHour())
+    ) {
+        $attendance->break_out = $now;
+        $msg = 'Break-out recorded.';
+    } elseif (
+        !$attendance->break_in &&
+        $now->between($breakEnd->subHour(), $breakEnd->addHour())
+    ) {
+        $attendance->break_in = $now;
+        $msg = 'Break-in recorded.';
+    } elseif (
+        !$attendance->time_out &&
+        $now->between($end->subHour(), $end->addHour())
+    ) {
+        $attendance->time_out = $now;
+        $msg = 'Time-out recorded.';
+    } else {
+        $msg = 'No applicable attendance action for this time.';
     }
 
-    if ($shift == 'afternoon') {
-        if (!$attendance->afternoon_time_in) {
-            // Afternoon login
-            $attendance->afternoon_time_in = $currentTime;
-            $attendance->status = null; // Status remains null until logout
-            $attendance->save();
-            return redirect()->back()->with('success', 'Afternoon Time In recorded.');
-        }
+    $attendance->save();
 
-        if ($attendance->afternoon_time_in && !$attendance->afternoon_time_out) {
-            // Check if logout is still allowed (before 8:00 AM next day)
-            $deadline = Carbon::parse($attendance->afternoon_time_in)->addDay()->setTime(8, 0, 0); // 8:00 AM next day
-
-            if ($currentTime->lessThanOrEqualTo($deadline)) {
-                $attendance->afternoon_time_out = $currentTime;
-                $attendance->status = 'Present'; // Only mark present if logout within allowed time
-                $attendance->save();
-                return redirect()->back()->with('success', 'Afternoon Time Out recorded.');
-            } else {
-                return redirect()->back()->with('error', 'Cannot logout for afternoon shift. Deadline passed.');
-            }
-        }
-
-        return redirect()->back()->with('error', 'Afternoon attendance already completed.');
-    }
-
-    return redirect()->back()->with('error', 'Invalid operation.');
+    return back()->with('success', $msg);
 }
 
     

@@ -106,67 +106,67 @@
                                 </td>
                             </tr>
                             <!-- Edit Shift Modal -->
-<div class="modal fade" id="editShiftModal{{ $shift->id }}" tabindex="-1" aria-labelledby="editShiftModalLabel{{ $shift->id }}" aria-hidden="true">
-    <div class="modal-dialog modal modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editShiftModalLabel{{ $shift->id }}">Edit Shift: {{ $shift->name }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-            <form action="{{ route('shifts.update', $shift->id) }}" method="POST">
-                @csrf
-                @method('PUT')
-            
-                <!-- Shift Name -->
+                <div class="modal fade" id="editShiftModal{{ $shift->id }}" tabindex="-1" aria-labelledby="editShiftModalLabel{{ $shift->id }}" aria-hidden="true">
+                    <div class="modal-dialog modal modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="editShiftModalLabel{{ $shift->id }}">Edit Shift: {{ $shift->name }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                            <form action="{{ route('shifts.update', $shift->id) }}" method="POST">
+                                @csrf
+                                @method('PUT')
+                            
+                                <!-- Shift Name -->
+                                <div class="row mt-3">
+                                    <div class="col">
+                                        <label for="name" class="form-label">Shift Name:</label>
+                                    </div>
+                                    <div class="col">
+                                        <input class="form-control" type="text" name="name" id="name" value="{{ $shift->name }}" required>
+                                    </div>
+                                </div>
+                            
+                                <!-- Shift Start Time -->
                 <div class="row mt-3">
                     <div class="col">
-                        <label for="name" class="form-label">Shift Name:</label>
+                        <label for="shift_start_time" class="form-label">Shift Start Time:</label>
                     </div>
                     <div class="col">
-                        <input class="form-control" type="text" name="name" id="name" value="{{ $shift->name }}" required>
+                        <input class="form-control" type="time" name="start_time" id="shift_start_time" value="{{ old('start_time', $shift->start_time ?? '') }}" required>
                     </div>
                 </div>
-            
-                <!-- Shift Start Time -->
-<div class="row mt-3">
-    <div class="col">
-        <label for="shift_start_time" class="form-label">Shift Start Time:</label>
-    </div>
-    <div class="col">
-        <input class="form-control" type="time" name="start_time" id="shift_start_time" value="{{ old('start_time', $shift->start_time ?? '') }}" required>
-    </div>
-</div>
 
-<!-- Shift End Time -->
-<div class="row mt-3">
-    <div class="col">
-        <label for="shift_end_time" class="form-label">Shift End Time:</label>
-    </div>
-    <div class="col">
-        <input class="form-control" type="time" name="end_time" id="shift_end_time" value="{{ old('end_time', $shift->end_time ?? '') }}" required>
-    </div>
-</div>
+                <!-- Shift End Time -->
+                <div class="row mt-3">
+                    <div class="col">
+                        <label for="shift_end_time" class="form-label">Shift End Time:</label>
+                    </div>
+                    <div class="col">
+                        <input class="form-control" type="time" name="end_time" id="shift_end_time" value="{{ old('end_time', $shift->end_time ?? '') }}" required>
+                    </div>
+                </div>
 
-<!-- Break Start Time -->
-<div class="row mt-3">
-    <div class="col">
-        <label for="break_start_time" class="form-label">Break Start Time:</label>
-    </div>
-    <div class="col">
-        <input class="form-control" type="time" name="break_start_time" id="break_start_time" value="{{ old('break_start_time', $shift->break_start_time ?? '') }}">
-    </div>
-</div>
+                <!-- Break Start Time -->
+                <div class="row mt-3">
+                    <div class="col">
+                        <label for="break_start_time" class="form-label">Break Start Time:</label>
+                    </div>
+                    <div class="col">
+                        <input class="form-control" type="time" name="break_start_time" id="break_start_time" value="{{ old('break_start_time', $shift->break_start_time ?? '') }}">
+                    </div>
+                </div>
 
-<!-- Break End Time -->
-<div class="row mt-3">
-    <div class="col">
-        <label for="break_end_time" class="form-label">Break End Time:</label>
-    </div>
-    <div class="col">
-        <input class="form-control" type="time" name="break_end_time" id="break_end_time" value="{{ old('break_end_time', $shift->break_end_time ?? '') }}">
-    </div>
-</div>
+                <!-- Break End Time -->
+                <div class="row mt-3">
+                    <div class="col">
+                        <label for="break_end_time" class="form-label">Break End Time:</label>
+                    </div>
+                    <div class="col">
+                        <input class="form-control" type="time" name="break_end_time" id="break_end_time" value="{{ old('break_end_time', $shift->break_end_time ?? '') }}">
+                    </div>
+                </div>
             
                 <!-- Shift Description (Optional) -->
                 <div class="row mt-3">

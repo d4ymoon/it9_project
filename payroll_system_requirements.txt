@@ -1,0 +1,119 @@
+Payroll System Requirements:
+• Employee salary computation (basic pay, overtime, deductions) – overtime based on attendance subsystem
+• Tax and benefit deductions (SSS, PhilHealth, Pag-IBIG) 
+• Payslip generation and distribution – generate pdf payslips
+• Employee loans and deductions tracking 
+• Payroll report generation
+• Direct deposit integration
+
+Done tables: employees, shifts, contribution types, contributions, positions
+Not yet done: attendance(not yet tested), payroll(partial completion), loans, payslips, payroll reports, bank transaction(for direct deposit), users(for authenticatin)
+
+Note: since attendance is a subsystem, make a login page where employees can do attendance, and payroll managers can login to main system. 
+
+Attendance subsystem:
+Example shift: 8 am to 5pm with 12pm - 1pm break (so twice log in and logout, 8am login, 12pm break logout, 1pm login, 5pm shift logout)
+on a normal shift day, employee logins at 8, logs out for break at 12, logins again for 1pm 2nd half of shift, then logs out at 5pm.
+but employee can also have half shift, meaning they are allowed to work only for 8-12 or 1-5.
+
+an employee, can login before 8 (but in payroll controller, salary is only counted for hours on shift, don’t mind that we focus on only attendance now), and they can also logout before 12 (again doesn’t matter we can calculate in payroll). if they login in at 9am or 11am example, that’s still the first login for the first half of shift. however, if they first login during break (12-1pm) or afternoon (1pm -5pm) then that will be their first login at will be part of second half of shift. during their second half of shift, they can also logout whenever, since they can work overtime. example: they login at 8am, logout break at 12, login at 1240, logout at 8pm (which is 3 hours overtime). they can do that.
+
+there are caveats though, if an employee logs in for first half of shift, example 8am. but they do not logout for break and its already the end time for their shift (5pm), they will be considered absent for that day. same with second half of shift, if they login at 1pm but they do not logout before 8am next day (when next day employee shift starts), they will also be considered absent. 
+
+so here example:
+•	normal: 8am login 12pm logout (break) 1pm login (after break) 5pm logout (end shift)
+•	half day: (8am login 12pm logout)
+•	half day 2: (1pm login 5pm logout)
+•	overtime: 8am login 12pm logout, 1pm login 9pm logout (they have overtime)
+•	employee forgets to logout for first half of shift: 8am login but then doesn’t logout until 5pm, considered absent
+•	forgets to logout for second half of shift: 8am login, 12pm logout 1pm login but doesn’t logout until next day shift start (8am), considered only half day (since they login at 8am-12pm) 1pm onwards doesn’t count.
+•	does only second half of shift but forgets to logout: 1pm login but doesn’t logout until next day shift start (8am), considered absent for day
+•	if an employee doesn’t login during their shift (8am-5pm) then they try to login at 6pm: doesn’t allow, since overtime only works if you log in for today (so employee cannot cheat and just work overtimes)
+•	Note: if employee first logs in during shift break (half-day) example 12:30 pm, then considered as login for second half of shift
+
+HOW PAYROLL IS GENERATED:
+NOTE: MONTHLY SALARY IS BASED ON HOURS WORKED, NOT DAYS PRESENT.
+Example shift: 8 am to 5pm with 12pm - 1pm break (8 hours)
+During shift hours: Count normal hours as regular pay so 8 hours * hourly rate.
+Before shift hours: if employee logs in at 7am, 7am -8am hours does not count as hourly salary is only counted DURING SHIFT, so only 8am onwards count. Also works with break time, if employee logs in at 12:30 after break, then 12:30pm – 1pm isn’t counted as only 1pm onwards counts towards hourly rate.
+--OVERTIME--
+After shift hours: overtime pay. Example employee work 8AM- 9PM, then 5PM- 9PM, 4 hours is considered overtime pay. Overtime pay rate on regular days is 1.25 * the hourly rate of salary
+During weekends (sat sun), if employee works on their shift during weekends, then they have weekend overtime pay. Example employee work Saturday 8AM- 5PM, with 1 hour lunch break (8 hours) is considered overtime pay. Overtime pay rate on rest days (weekend) is 1.5 * the hourly rate of salary.
+
+NOTE: OVERTIME IS ONLY COUNTED IF EMPLOYEE WORKED MORE THAN 2 HOURS OF OVERTIME. 
+Example: if employee logs out at 6pm, since its 1 hour overtime, doesn’t count. Only overtime above 2 hours is counted. 
+Also, overtime is on a day-by-day basis, if employee works 1 hour overtime on Monday and 1 hour overtime on Tuesday, and 3 hours overtime on Wednesday, it doesn’t add up to 5 hours of overtime, since Monday is 1 hour, no overtime pay, Tuesday 1 hour, no overtime pay, but Wednesday 3 hours, then 3 hours is counted.
+
+
+
+SALARY CALCULATION:
+example during whole month employee works 176 regular hours and 10 regular overtime hours, and 6 weekend overtime hours, so:
+adjusted salary: (176 * hourly pay) + (10 * (1.25 * hourly pay) + (6 * (1.5 * hourly pay)
+Note : regular day overtime pay(overtime during mon-fri) is 1.25 * hourly salary while weekend overtime pay is 1.5 * hourly salary. 
+DEDUCTIONS:
+Deductions are deducted from adjusted salary, so example 50,000 salary for whole month – (1,000 SSS deduction, and 2,000 philhealth deduction)
+SO new taxable salary is 50,000 – 3,000 = 47,000.
+THEN with deductions subtracted, calculate the tax of that salary.
+TAX CALCULATION FOR SEMIMONTHYL AND MONTHLY: (FROM BIR):
+
+public function calculateSemiTax($taxable_income) {
+    if ($taxable_income <= 10417) {
+        return 0;
+    } elseif ($taxable_income <= 16666) {
+        return 0 + 0.15 * ($taxable_income - 10417);
+    } elseif ($taxable_income <= 33332) {
+        return 1250 + 0.20 * ($taxable_income - 16667);
+    } elseif ($taxable_income <= 83332) {
+        return 5416.67 + 0.25 * ($taxable_income - 33333);
+    } elseif ($taxable_income <= 333332) {
+        return 20416.67 + 0.30 * ($taxable_income - 83333);
+    } else {
+        return 100416.67 + 0.35 * ($taxable_income - 333333);
+    }
+}
+
+public function calculateMonthlyTax(float $taxable_income): float
+{
+    if ($taxable_income <= 20_833) {
+        return 0.0;
+    } elseif ($taxable_income <= 33_332) {
+        return ($taxable_income - 20_833) * 0.15;
+    } elseif ($taxable_income <= 66_666) {
+        return 1_875.00 + ($taxable_income - 33_333) * 0.20;
+    } elseif ($taxable_income <= 166_666) {
+        return 8_541.80 + ($taxable_income - 66_667) * 0.25;
+    } elseif ($taxable_income <= 666_666) {
+        return 33_541.80 + ($taxable_income - 166_667) * 0.30;
+    } else {
+        return 183_541.80 + ($taxable_income - 666_667) * 0.35;
+    }
+}
+
+
+So if employee is paid monthly and adjusted salary:
+((176 * hourly pay) + (10 * (1.25 * hourly pay) + (6 * (1.5 * hourly pay) – total deductions – loans) lets say = 47,000
+
+47,000 is in here:
+elseif ($taxable_income <= 66_666) {
+    return 1_875.00 + ($taxable_income - 33_333) * 0.20;
+}
+So:
+ ₱47,000 − ₱33,333 = ₱13,667
+ 20% of ₱13,667 = ₱2,733.40
+ Add base tax: ₱1,875.00 + ₱2,733.40 = ₱4,608.40
+
+SO NET SALARY IS: 47-000 - 4,608.40 = 42,391.60
+Payroll process:
+Based on hours worked and hourly salary.
+1. (Hours worked * hourly salary) + (regular overtime hours worked * 1.25) +( weekend overtime hours * 1.5)
+2. Subtract deductions and loans
+3. Based on salary with deductions, calculate the tax
+4. Salary with deductions – tax = NET SALARY
+
+NOTE: HOW TO GET HOURLY PAY
+Since system can be either monthly or semi monthly payroll:
+For monthly:
+Monthly payroll / working days / shift hours
+Example: Example shift: 8 am to 5pm with 12pm - 1pm break (8 hours), Example monthly salary: 20,000. Example working days: 22 days
+So 20,000/ 22 /8 = 113 hourly salary.
+For semi monthly just do monthly / 2 / working days / shift hours

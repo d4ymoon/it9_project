@@ -10,15 +10,11 @@ use App\Http\Controllers\ContributionTypeController;
 use App\Http\Controllers\ShiftController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('dashboard.index1');
 });
 
 Route::get('/dash', function () {
-    return view('dashboard.index');
-});
-
-Route::get('/dash1', function () {
-    return view('dashboard.index2');
+    return view('dashboard.index1');
 });
 
 

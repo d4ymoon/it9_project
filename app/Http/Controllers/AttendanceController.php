@@ -32,73 +32,100 @@ class AttendanceController extends Controller
      * Store a newly created resource in storage.
      */
 
-public function store(Request $request)
+     public function store(Request $request)
 {
-    $request->validate([
-        'employee_id' => 'required|exists:employees,id',
-    ]);
+    $employeeId = $request->employee_id;
+    $now = Carbon::now();
+    $date = $now->toDateString();
 
-    $employee = Employee::with('shift')->findOrFail($request->employee_id);
+    $employee = Employee::with('shift')->findOrFail($employeeId);
     $shift = $employee->shift;
 
     if (!$shift) {
-        return back()->with('error', 'Employee has no shift assigned.');
+        return response()->json(['message' => 'No shift assigned to this employee'], 422);
     }
 
-    $now = Carbon::now('Asia/Singapore');
-    $today = $now->toDateString();
 
-    // Construct shift time slots for today in Singapore timezone
-    $start = Carbon::parse("$today {$shift->start_time}", 'Asia/Singapore');
-    $breakStart = Carbon::parse("$today {$shift->break_start_time}", 'Asia/Singapore');
-    $breakEnd = Carbon::parse("$today {$shift->break_end_time}", 'Asia/Singapore');
-    $end = Carbon::parse("$today {$shift->end_time}", 'Asia/Singapore');
+    // Shift times
+    $shiftStart = Carbon::parse($date . ' ' . $shift->start_time);
+    $breakStart = $shift->break_start_time ? Carbon::parse($date . ' ' . $shift->break_start_time) : null;
+    $breakEnd = $shift->break_end_time ? Carbon::parse($date . ' ' . $shift->break_end_time) : null;
+    $shiftEnd = Carbon::parse($date . ' ' . $shift->end_time);
+    
+    // In case end_time is after midnight (e.g. 06:00), push to next day
+    if ($shiftEnd->lt($shiftStart)) {
+        $shiftEnd->addDay();
+    }
 
-    // Retrieve or create today's attendance
-    $attendance = Attendance::firstOrCreate([
-        'employee_id' => $employee->id,
-        'date' => $today,
-    ]);
+    $nextShiftStart = $shiftStart->copy()->addDay();
 
-    // Determine what to log
-    if (
-        !$attendance->time_in &&
-        (
-            $now->between($start->subHour(), $breakStart) ||         // First half
-            $now->between($breakEnd, $end)                           // Second half (partial/afternoon)
-        )
-    ) {
-        $attendance->time_in = $now;
-        $msg = 'Time-in recorded.';
-    } elseif (
-        !$attendance->break_out &&
-        $now->between($breakStart->subHour(), $breakStart->addHour())
-    ) {
+    // Get today's attendance
+    $attendance = Attendance::where('employee_id', $employeeId)
+        ->whereDate('date', $date)
+        ->first();
+
+    if (!$attendance) {
+        // First login
+        if ($now->between($breakStart, $shiftEnd)) {
+            // Logged in during second half
+            $attendance = Attendance::create([
+                'employee_id' => $employeeId,
+                'date' => $date,
+                'break_in' => $now,
+            ]);
+            return response()->json(['message' => 'Logged in (second half)', 'attendance' => $attendance]);
+        } elseif ($now->lt($breakStart)) {
+            // Logged in during first half
+            $attendance = Attendance::create([
+                'employee_id' => $employeeId,
+                'date' => $date,
+                'time_in' => $now,
+            ]);
+            return response()->json(['message' => 'Logged in (first half)', 'attendance' => $attendance]);
+        } else {
+            // Invalid login attempt after shift ends
+            return response()->json(['message' => 'Cannot login after shift without prior login'], 403);
+        }
+    }
+
+    // Log break out
+    if ($attendance->time_in && !$attendance->break_out && $now->between($breakStart, $breakEnd)) {
         $attendance->break_out = $now;
-        $msg = 'Break-out recorded.';
-    } elseif (
-        !$attendance->break_in &&
-        $now->between($breakEnd->subHour(), $breakEnd->addHour())
-    ) {
-        $attendance->break_in = $now;
-        $msg = 'Break-in recorded.';
-    } elseif (
-        !$attendance->time_out &&
-        $now->between($end->subHour(), $end->addHour())
-    ) {
-        $attendance->time_out = $now;
-        $msg = 'Time-out recorded.';
-    } else {
-        $msg = 'No applicable attendance action for this time.';
+        $attendance->save();
+        return response()->json(['message' => 'Break out recorded', 'attendance' => $attendance]);
     }
 
-    $attendance->save();
+    // Log break in (2nd half login)
+    if ($attendance->break_out && !$attendance->break_in && $now->between($breakEnd, $shiftEnd->copy()->addHours(6))) {
+        $attendance->break_in = $now;
+        $attendance->save();
+        return response()->json(['message' => 'Break in recorded', 'attendance' => $attendance]);
+    }
 
-    return back()->with('success', $msg);
+    // Log time out
+    if ($attendance->break_in && !$attendance->time_out && $now->gte($breakEnd)) {
+        $attendance->time_out = $now;
+
+        // Determine status
+        if ($attendance->time_in && $attendance->break_out && $attendance->break_in && $attendance->time_out) {
+            $attendance->status = 'Present';
+        } elseif ($attendance->time_in && $attendance->break_out && !$attendance->break_in && $now->gt($nextShiftStart)) {
+            $attendance->status = 'Absent';
+        } elseif ($attendance->break_in && !$attendance->time_out && $now->gt($nextShiftStart)) {
+            $attendance->status = 'Absent';
+        } elseif ($attendance->time_in && $attendance->break_out && !$attendance->break_in && $attendance->time_out) {
+            $attendance->status = 'Half Day';
+        }
+
+        $attendance->save();
+        return response()->json(['message' => 'Time out recorded', 'attendance' => $attendance]);
+    }
+
+    // Invalid or redundant action
+    return response()->json(['message' => 'No applicable attendance action for this time', 'attendance' => $attendance]);
+
 }
 
-    
-    
     /**
      * Display the specified resource.
      */

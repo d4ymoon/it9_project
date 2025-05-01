@@ -17,21 +17,20 @@ return new class extends Migration
             $table->string('contact_number');
             $table->string('email')->unique();
             $table->unsignedBigInteger('position_id');
+            $table->unsignedBigInteger('shift_id'); 
             $table->date('hire_date');
             $table->string('bank_acct'); 
             $table->enum('status', ['active', 'inactive'])->default('active');
         
-            // Replace enum with foreign key
-            $table->unsignedBigInteger('shift_id'); // <- Add this line
+           
         
-            // Foreign key constraints
             $table->foreign('position_id')
                 ->references('id')->on('positions')
                 ->onUpdate('cascade')->onDelete('restrict');
         
             $table->foreign('shift_id')
                 ->references('id')->on('shifts')
-                ->onUpdate('cascade')->onDelete('restrict'); // Optional: set to cascade or set null
+                ->onUpdate('cascade')->onDelete('restrict'); 
         
             $table->timestamps();
         });

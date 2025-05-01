@@ -129,115 +129,29 @@ class PayrollController extends Controller
         $workingDaysCount = $workingDays->count();
         echo "Working Days: $workingDaysCount\n"; // Debugging output for working days count
 
-        $dailyRate = $monthlySalary / 22;
+        $dailyRate = $monthlySalary / 22; // Or use workingDaysCount
         $hourlyRate = $dailyRate / 8;
         echo "Daily Rate: $dailyRate\n"; // Debugging output for daily rate
         echo "Hourly Rate: $hourlyRate\n"; // Debugging output for hourly rate
 
-        // Get the number of days the employee was present during the period
-        $daysPresent = $employee->attendances()
-            ->whereBetween('date', [$start, $end])
-            ->where('status', 'Present')
-            ->count();
-
-        echo "Days Present: $daysPresent\n"; // Debugging output for days present
-
-        // Calculate absences and deductions
-        $absentDays = $workingDaysCount - $daysPresent;
-        $absenceDeduction = $absentDays * $dailyRate;
-        echo "Absent Days: $absentDays\n"; // Debugging output for absent days
-        echo "Absence Deduction: $absenceDeduction\n"; // Debugging output for absence deduction
-
-        if ($payFrequency === 'monthly') {
-            $adjustedSalary = $monthlySalary - $absenceDeduction;
-        } else {
-            $adjustedSalary = $semiMonthlySalary - $absenceDeduction;
-        }
-
-        echo "Adjusted Salary (after absence): $adjustedSalary\n"; // Debugging output for adjusted salary
-
-        // Initialize overtime and regular hour counters
-        $totalRegularHours = 0;
-        $totalWeekdayOvertimeHours = 0;
-        $totalWeekendHours = 0;
-        $weekdayOvertimeRate = 1.25 * $hourlyRate; // 25% extra for weekdays overtime
-        $weekendOvertimeRate = 1.5 * $hourlyRate;  // 50% extra for weekends
-
-        // Fetch the attendance records within the pay period
-        $attendances = $employee->attendances()
-            ->whereBetween('date', [$start, $end])
-            ->where('status', 'Present')
-            ->get();
-
-        echo "Attendance Records: " . $attendances->count() . "\n"; // Debugging output for attendance records
-
-        foreach ($attendances as $attendance) {
-            echo "Processing Attendance ID: {$attendance->id}\n"; // Debugging output for attendance
-
-            $attendanceDate = Carbon::parse($attendance->date, 'Asia/Singapore');
-            $morningLogin = Carbon::parse($attendance->morning_login, 'Asia/Singapore');
-            $afternoonLogin = Carbon::parse($attendance->afternoon_login, 'Asia/Singapore');
-
-            // Ensure that Time In and Time Out are on the correct day
-            $morningLogin->setDate($attendanceDate->year, $attendanceDate->month, $attendanceDate->day);
-            $afternoonLogin->setDate($attendanceDate->year, $attendanceDate->month, $attendanceDate->day);
-
-            // If the attendance is invalid (no login times), skip
-            if (!$morningLogin || !$afternoonLogin || $afternoonLogin->lessThanOrEqualTo($morningLogin)) {
-                echo "Skipping invalid attendance\n";
-                continue; // Skip invalid entries
-            }
-
-            // Calculate worked hours for the morning and afternoon shifts
-            $workedMinutesMorning = 0; // Initialize with a default value.
-
-            if ($morningLogin && $afternoonLogin) {
-                // Calculate time worked between morning and afternoon logins.
-                $workedMinutesMorning = $morningLogin->diffInMinutes($afternoonLogin);
-            } elseif ($morningLogin && !$afternoonLogin) {
-                // If no afternoon login, only consider the morning shift.
-                // Set the worked time based on the morning shift length (e.g., 4 hours if 8 AM to 12 PM).
-                $workedMinutesMorning = $morningLogin->diffInMinutes(Carbon::parse('12:00 PM', 'Asia/Singapore'));
-            } elseif (!$morningLogin && $afternoonLogin) {
-                // If no morning login, only consider the afternoon shift.
-                // Set the worked time based on the afternoon shift length (e.g., 4 hours if 1 PM to 5 PM).
-                $workedMinutesMorning = $afternoonLogin->diffInMinutes(Carbon::parse('5:00 PM', 'Asia/Singapore'));
-            }
-
-            $workedHoursMorning = $workedMinutesMorning / 60;
-
-            // Handle Weekend Work
-            if ($attendanceDate->isWeekend()) {
-                if ($workedHoursMorning > 2) {
-                    $totalWeekendHours += $workedHoursMorning;
-                }
-            } else {
-                // Regular Work Time Calculation (Mon-Fri, 8:00 AM - 5:00 PM)
-                $regularMinutes = $workedMinutesMorning;
-                $regularHours = $regularMinutes / 60;
-                $totalRegularHours += $regularHours;
-
-                // Overtime Calculation for weekdays after 5 PM
-                if ($afternoonLogin->greaterThan($morningLogin->copy()->setTime(17, 0))) {
-                    // Calculate overtime duration
-                    $overtimeMinutes = $afternoonLogin->diffInMinutes($morningLogin->copy()->setTime(17, 0));
-                    $overtimeHours = $overtimeMinutes / 60;
-
-                    if ($overtimeHours > 2) {
-                        $totalWeekdayOvertimeHours += $overtimeHours;
-                    }
-                }
-            }
-        }
+        //------- CALCULATE ATTENDANCE HERE -------
+        $totalRegularHours = 1; //TOTAL HOURS WORKED DURING SHIFT HOURS SHIFT HOURS IS BASED ON SHIFT TABLE
+        $totalWeekdayOvertimeHours =  1; //TOTAL OVERTIME HOURS WORKED OVER SHIFT DURING WEEKDAYS, OVERTIME IS BASED ON SHIFT TABLE SHIFT END TIME
+        $totalWeekendHours = 1; //TOTAL  OVERTIME WEEKEND HOURS WORKED DURING SHIFT;
+        //------- CALCULATE ATTENDANCE HERE -------
 
         $totalRegularPay = $totalRegularHours * $hourlyRate;
-        $totalWeekdayOvertimePay = $totalWeekdayOvertimeHours * $weekdayOvertimeRate;
-        $totalWeekendPay = $totalWeekendHours * $weekendOvertimeRate;
+        $totalWeekdayOvertimePay = $totalWeekdayOvertimeHours *  1.25;  // Weekday overtime rate
+        $totalWeekendPay = $totalWeekendHours * 1.5; // Weekend overtime rate
 
         // Sum up all the payments
         echo "Total Regular Pay: $totalRegularPay\n"; // Debugging output for total regular pay
         echo "Total Weekday Overtime Pay: $totalWeekdayOvertimePay\n"; // Debugging output for total weekday overtime pay
         echo "Total Weekend Pay: $totalWeekendPay\n"; // Debugging output for total weekend pay
+
+        $adjustedSalary = $totalRegularPay + $totalWeekdayOvertimePay + $totalWeekendPay;
+        
+        echo "Adjusted Salary: $adjustedSalary\n"; // Debugging output for adjusted salary
 
         // Calculate total contributions
         $totalContributions = $employee->contributions->sum(function ($contribution) use ($adjustedSalary) {
@@ -248,8 +162,11 @@ class PayrollController extends Controller
 
         echo "Total Contributions: $totalContributions\n"; // Debugging output for total contributions
 
+        //------- CALCULATE LOAN DEDUCTIONS HERE -------
+        //------- CALCULATE LOAN DEDUCTIONS HERE -------
+
         // Calculate taxable income and tax
-        $overtimePay = ($totalWeekdayOvertimeHours * $weekdayOvertimeRate) + ($totalWeekendHours * $weekendOvertimeRate);
+        $overtimePay = ($totalWeekdayOvertimeHours * 1.25) + ($totalWeekendHours * 1.5);
         $taxableIncome = $adjustedSalary + $totalRegularPay + $totalWeekdayOvertimePay + $totalWeekendPay + $totalContributions;
 
         // Tax calculation based on employee's status
@@ -263,10 +180,10 @@ class PayrollController extends Controller
         $payroll = Payroll::create([
             'employee_id' => $employee->id,
             'pay_period' => $payPeriod,
-            'days_worked' => $daysPresent, // Assuming $daysWorked is calculated or passed from the logic
-            'basic_pay' => $adjustedSalary, // Assuming $adjustedSalary is your basic pay
-            'overtime_pay' => $overtimePay, // Assuming $overtimePay is calculated
-            'total_deductions' => $totalContributions, // You need to calculate this based on any deductions (e.g., absences, other deductions)
+            'hours_worked', // TOTAL HOURS IN MONTH
+            'basic_pay', // HOURLY RATE * TOTAL HOURS IN MONTH
+            'overtime_pay' => $overtimePay, // OVERTIME HOURS * OVERTIME RATE
+            'total_deductions' => $totalContributions, // You need to calculate this based on any deductions (e.g., absences, other deductions, or loans)
             'taxable_income' => $taxableIncome, // This is the income before tax
             'tax' => $taxAmount, // This is the calculated tax
             'net_salary' => $netIncome, // This is the final amount after deductions and tax

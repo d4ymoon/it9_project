@@ -94,7 +94,7 @@
                         <td>{{ $employee->contact_number }}</td>
                         <td>{{ $employee->email }}</td>
                         <td>{{ $employee->name }}</td>
-                        <td>{{ $employee->shift_type }}</td>
+                        <td>{{ $employee->shift->name ?? 'No Shift Assigned' }}</td>
                         <td>{{ $employee->hire_date }}</td>
                         <td>{{ $employee->bank_acct }}</td>
                         <td class="text-nowrap" style="width:275px">
@@ -152,11 +152,13 @@
                                                 id="email{{ $employee->id }}" value="{{ $employee->email }}" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="shift_type{{ $employee->id }}" class="form-label">Shift</label>
-                                            <select class="form-select" name="shift_type" id="shift_type{{ $employee->id }}" required>
-                                                <option value="Morning" {{ $employee->shift_type == 'Morning' ? 'selected' : '' }}>Morning</option>
-                                                <option value="Afternoon" {{ $employee->shift_type == 'Afternoon' ? 'selected' : '' }}>Afternoon</option>
-                                                <option value="Fulltime" {{ $employee->shift_type == 'Fulltime' ? 'selected' : '' }}>Fulltime</option>
+                                            <label for="shift_id{{ $employee->id }}" class="form-label">Shift</label>
+                                            <select class="form-select" name="shift_id" id="shift_id{{ $employee->id }}" required>
+                                                @foreach ($shifts as $shift)
+                                                    <option value="{{ $shift->id }}" {{ $employee->shift_id == $shift->id ? 'selected' : '' }}>
+                                                        {{ $shift->name }}
+                                                    </option>
+                                                @endforeach
                                             </select>
                                         </div>
                                         <div class="mb-3">

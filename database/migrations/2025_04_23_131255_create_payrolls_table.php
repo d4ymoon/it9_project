@@ -17,7 +17,7 @@ return new class extends Migration
 
         $table->string('pay_period'); // e.g. '2025-04-01_to_2025-04-15'
 
-        $table->integer('days_worked')->default(0);
+        $table->integer('hours_worked')->default(0);
         $table->decimal('basic_pay', 10, 2)->default(0);
         $table->decimal('overtime_pay', 10, 2)->default(0);
         $table->decimal('total_deductions', 10, 2)->default(0);

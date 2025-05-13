@@ -42,7 +42,10 @@ class PositionController extends Controller
             'salary' => $validated['salary'],
         ]);
 
-        return redirect()->route('employees.index');
+        $source = $request->input('source', 'positions');
+        $route = $source === 'employees' ? 'employees.index' : 'positions.index';
+
+        return redirect()->route($route)->with('success', 'Position created successfully.');
     }
 
     /**

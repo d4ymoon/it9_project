@@ -19,8 +19,11 @@ return new class extends Migration
             $table->unsignedBigInteger('position_id');
             $table->unsignedBigInteger('shift_id'); 
             $table->date('hire_date');
-            $table->string('bank_acct'); 
+            $table->string('bank_name')->nullable();
+            $table->string('bank_acct')->nullable();
+            $table->enum('payment_method', ['bank', 'cash'])->default('cash');
             $table->enum('status', ['active', 'inactive'])->default('active');
+           
         
            
         

@@ -84,7 +84,7 @@
                         <th style="width:220px">Shift</th>
                         <th style="width:220px">Hire Date</th>
                         <th style="width:220px">Bank Account</th>
-                        <th style="width:275px">Actions</th>
+                        <th style="width:275px">Actions {{ auth()->user()->role }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -118,6 +118,19 @@
                                 @method('DELETE')
                                 <button class="btn btn-sm btn-danger" type="submit">Delete</button>
                             </form>
+
+                            
+                            @if(auth()->user()->role === 'admin' && $employee->user)
+                                <form action="{{ route('employees.updateRole', $employee->id) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    @method('PUT')
+                                    <select name="role" class="form-select form-select-sm d-inline w-auto" onchange="this.form.submit()">
+                                        <option disabled selected>Change Role</option>
+                                        <option value="employee" {{ $employee->user->role === 'employee' ? 'selected' : '' }}>Employee</option>
+                                        <option value="admin" {{ $employee->user->role === 'admin' ? 'selected' : '' }}>Admin</option>
+                                    </select>
+                                </form>
+                            @endif
                         </td>
                     </tr>
     
@@ -135,36 +148,76 @@
                                             aria-label="Close"></button>
                                     </div>
                                     <div class="modal-body">
-                                        <div class="mb-3">
-                                            <label for="name{{ $employee->id }}" class="form-label">Name</label>
-                                            <input type="text" class="form-control" name="name"
-                                                id="name{{ $employee->id }}" value="{{ $employee->name }}" required>
+                                        <div class="row mb-3">
+                                            <div class="col">
+                                                <label for="name{{ $employee->id }}" class="form-label">Name:</label>
+                                            </div>
+                                            <div class="col">
+                                                <input type="text" class="form-control" name="name"
+                                                    id="name{{ $employee->id }}" value="{{ $employee->name }}" required>
+                                            </div>
                                         </div>
-                                        <div class="mb-3">
-                                            <label for="contact{{ $employee->id }}" class="form-label">Contact Number</label>
-                                            <input type="text" class="form-control" name="contact_number"
-                                                id="contact{{ $employee->id }}" value="{{ $employee->contact_number }}"
-                                                maxlength="11" required>
+                                        <div class="row mb-3">
+                                            <div class="col">
+                                                <label for="contact{{ $employee->id }}" class="form-label">Contact Number:</label>
+                                            </div>
+                                            <div class="col">
+                                                <input type="text" class="form-control" name="contact_number"
+                                                    id="contact{{ $employee->id }}" value="{{ $employee->contact_number }}"
+                                                    maxlength="11" required>
+                                            </div>
                                         </div>
-                                        <div class="mb-3">
-                                            <label for="email{{ $employee->id }}" class="form-label">Email</label>
-                                            <input type="email" class="form-control" name="email"
-                                                id="email{{ $employee->id }}" value="{{ $employee->email }}" required>
+                                        <div class="row mb-3">
+                                            <div class="col">
+                                                <label for="email{{ $employee->id }}" class="form-label">Email:</label>
+                                            </div>
+                                            <div class="col">
+                                                <input type="email" class="form-control" name="email"
+                                                    id="email{{ $employee->id }}" value="{{ $employee->email }}" required>
+                                            </div>
                                         </div>
-                                        <div class="mb-3">
-                                            <label for="shift_id{{ $employee->id }}" class="form-label">Shift</label>
-                                            <select class="form-select" name="shift_id" id="shift_id{{ $employee->id }}" required>
-                                                @foreach ($shifts as $shift)
-                                                    <option value="{{ $shift->id }}" {{ $employee->shift_id == $shift->id ? 'selected' : '' }}>
-                                                        {{ $shift->name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
+                                        <div class="row mb-3">
+                                            <div class="col">
+                                                <label for="shift_id{{ $employee->id }}" class="form-label">Shift:</label>
+                                            </div>
+                                            <div class="col">
+                                                <select class="form-select" name="shift_id" id="shift_id{{ $employee->id }}" required>
+                                                    @foreach ($shifts as $shift)
+                                                        <option value="{{ $shift->id }}" {{ $employee->shift_id == $shift->id ? 'selected' : '' }}>
+                                                            {{ $shift->name }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
                                         </div>
-                                        <div class="mb-3">
-                                            <label for="bank{{ $employee->id }}" class="form-label">Bank Account</label>
-                                            <input type="text" class="form-control" name="bank_acct"
-                                                id="bank{{ $employee->id }}" value="{{ $employee->bank_acct }}" required>
+                                        <div class="row mb-3">
+                                            <div class="col">
+                                                <label for="bank_name{{ $employee->id }}" class="form-label">Bank Name:</label>
+                                            </div>
+                                            <div class="col">
+                                                <input type="text" class="form-control" name="bank_name"
+                                                    id="bank_name{{ $employee->id }}" value="{{ $employee->bank_name }}">
+                                            </div>
+                                        </div>
+                                        <div class="row mb-3">
+                                            <div class="col">
+                                                <label for="bank{{ $employee->id }}" class="form-label">Bank Account Number:</label>
+                                            </div>
+                                            <div class="col">
+                                                <input type="text" class="form-control" name="bank_acct"
+                                                    id="bank{{ $employee->id }}" value="{{ $employee->bank_acct }}" required>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-3">
+                                            <div class="col">
+                                                <label for="payment_method{{ $employee->id }}" class="form-label">Payment Method:</label>
+                                            </div>
+                                            <div class="col">
+                                                <select class="form-select" name="payment_method" id="payment_method{{ $employee->id }}">
+                                                    <option value="cash" {{ $employee->payment_method == 'cash' ? 'selected' : '' }}>Cash</option>
+                                                    <option value="bank" {{ $employee->payment_method == 'bank' ? 'selected' : '' }}>Bank</option>
+                                                </select>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="modal-footer">
@@ -369,10 +422,31 @@ aria-hidden="true">
 
                 <div class="row mt-1">
                     <div class="col">
-                        <label for="bank_acct" class="form-label">Bank Account:</label>
+                        <label for="bank_name" class="form-label">Bank Name:</label>
+                    </div>
+                    <div class="col">
+                        <input class="form-control" type="text" name="bank_name" id="bank_name">
+                    </div>
+                </div>
+
+                <div class="row mt-1">
+                    <div class="col">
+                        <label for="bank_acct" class="form-label">Bank Account Number:</label>
                     </div>
                     <div class="col">
                         <input class="form-control" type="text" name="bank_acct" id="bank_acct" required>
+                    </div>
+                </div>
+
+                <div class="row mt-1">
+                    <div class="col">
+                        <label for="payment_method" class="form-label">Payment Method:</label>
+                    </div>
+                    <div class="col">
+                        <select class="form-control" name="payment_method" id="payment_method">
+                            <option value="cash" selected>Cash</option>
+                            <option value="bank">Bank</option>
+                        </select>
                     </div>
                 </div>
         </div>
@@ -397,6 +471,7 @@ aria-hidden="true">
         <div class="modal-body">
             <form action="{{ route('position.store') }}" method="POST">
                 @csrf
+                <input type="hidden" name="source" value="employees">
                 <div class="row">
                     <div class="col">
                         <label for="name" class="form-label">Name:</label>

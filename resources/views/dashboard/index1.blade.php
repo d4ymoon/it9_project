@@ -17,10 +17,21 @@
         <div class="col text-end">
             <div class="dropdown">
                 <a class="btn btn-outline dropdown-toggle" style="color:white" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-person-circle"></i> Account</a>
+                <i class="bi bi-person-circle"></i> {{ Auth::user()->name }}</a>
                 <ul class="dropdown-menu">
-                    <li><a href="accounts.php" class="dropdown-item "target="content-frame"  onclick="saveIframePage('accounts.php')">Settings</a></li>
-                    <li> <a href="logout.php" class="dropdown-item" style="color: black"><i class="bi bi-box-arrow-in-left"></i> Log out</a></li>
+                    <li>
+                        <a href="#" class="dropdown-item">
+                            <i class="bi bi-person"></i> Profile
+                        </a>
+                    </li>
+                    <li>
+                        <form method="POST" action="{{ route('logout') }}" class="dropdown-item p-0">
+                            @csrf
+                            <button type="submit" class="btn btn-link text-dark text-decoration-none w-100 text-start px-3">
+                                <i class="bi bi-box-arrow-right"></i> Sign Out
+                            </button>
+                        </form>
+                    </li>
                 </ul>
             </div>           
         </div>
@@ -66,6 +77,12 @@
                     <li>
                         <a href="{{ route('payrolls.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('payrolls.index') }}')">
                             <i class="bi bi-receipt"></i> <span class="sidebar-text">Payrolls</span>
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="{{ route('loans.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('loans.index') }}')">
+                            <i class="bi bi-cash-coin"></i> <span class="sidebar-text">Loans</span>
                         </a>
                     </li>
 

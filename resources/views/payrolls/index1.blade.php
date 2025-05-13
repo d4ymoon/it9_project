@@ -37,7 +37,7 @@
                             <th>ID</th>
                             <th>Employee ID</th>
                             <th>Pay Period</th>
-                            <th>Days Worked</th>
+                            <th>Hours Worked</th>
                             <th>Basic Pay</th>
                             <th>Overtime Pay</th>
                             <th>Total Deductions</th>
@@ -53,7 +53,7 @@
                                 <td>{{ $payroll->id }}</td>
                                 <td>{{ $payroll->employee_id }}</td>
                                 <td>{{ $payroll->pay_period }}</td>
-                                <td>{{ $payroll->days_worked }}</td>
+                                <td>{{ $payroll->hours_worked }}</td>
                                 <td>{{ number_format($payroll->basic_pay, 2) }}</td>
                                 <td>{{ number_format($payroll->overtime_pay, 2) }}</td>
                                 <td>{{ number_format($payroll->total_deductions, 2) }}</td>
@@ -70,10 +70,10 @@
                                     <!-- Delete Form -->
                                     <form action="{{ route('payrolls.destroy', $payroll->id) }}" method="POST"
                                         onsubmit="return confirm('Are you sure you want to delete this payroll record?');"
-                                        style="display: inline-block; margin: 0;">
+                                        style="display: inline-block;">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+                                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
                                     </form>
 
                                 </td>

@@ -16,7 +16,7 @@ Example shift: 8 am to 5pm with 12pm - 1pm break (so twice log in and logout, 8a
 on a normal shift day, employee logins at 8, logs out for break at 12, logins again for 1pm 2nd half of shift, then logs out at 5pm.
 but employee can also have half shift, meaning they are allowed to work only for 8-12 or 1-5.
 
-an employee, can login before 8 (but in payroll controller, salary is only counted for hours on shift, don’t mind that we focus on only attendance now), and they can also logout before 12 (again doesn’t matter we can calculate in payroll). if they login in at 9am or 11am example, that’s still the first login for the first half of shift. however, if they first login during break (12-1pm) or afternoon (1pm -5pm) then that will be their first login at will be part of second half of shift. during their second half of shift, they can also logout whenever, since they can work overtime. example: they login at 8am, logout break at 12, login at 1240, logout at 8pm (which is 3 hours overtime). they can do that.
+an employee, can login before 8 (but in payroll controller, salary is only counted for hours on shift, don't mind that we focus on only attendance now), and they can also logout before 12 (again doesn't matter we can calculate in payroll). if they login in at 9am or 11am example, that's still the first login for the first half of shift. however, if they first login during break (12-1pm) or afternoon (1pm -5pm) then that will be their first login at will be part of second half of shift. during their second half of shift, they can also logout whenever, since they can work overtime. example: they login at 8am, logout break at 12, login at 1240, logout at 8pm (which is 3 hours overtime). they can do that.
 
 there are caveats though, if an employee logs in for first half of shift, example 8am. but they do not logout for break and its already the end time for their shift (5pm), they will be considered absent for that day. same with second half of shift, if they login at 1pm but they do not logout before 8am next day (when next day employee shift starts), they will also be considered absent. 
 
@@ -25,24 +25,24 @@ so here example:
 •	half day: (8am login 12pm logout)
 •	half day 2: (1pm login 5pm logout)
 •	overtime: 8am login 12pm logout, 1pm login 9pm logout (they have overtime)
-•	employee forgets to logout for first half of shift: 8am login but then doesn’t logout until 5pm, considered absent
-•	forgets to logout for second half of shift: 8am login, 12pm logout 1pm login but doesn’t logout until next day shift start (8am), considered only half day (since they login at 8am-12pm) 1pm onwards doesn’t count.
-•	does only second half of shift but forgets to logout: 1pm login but doesn’t logout until next day shift start (8am), considered absent for day
-•	if an employee doesn’t login during their shift (8am-5pm) then they try to login at 6pm: doesn’t allow, since overtime only works if you log in for today (so employee cannot cheat and just work overtimes)
+•	employee forgets to logout for first half of shift: 8am login but then doesn't logout until 5pm, considered absent
+•	forgets to logout for second half of shift: 8am login, 12pm logout 1pm login but doesn't logout until next day shift start (8am), considered only half day (since they login at 8am-12pm) 1pm onwards doesn't count.
+•	does only second half of shift but forgets to logout: 1pm login but doesn't logout until next day shift start (8am), considered absent for day
+•	if an employee doesn't login during their shift (8am-5pm) then they try to login at 6pm: doesn't allow, since overtime only works if you log in for today (so employee cannot cheat and just work overtimes)
 •	Note: if employee first logs in during shift break (half-day) example 12:30 pm, then considered as login for second half of shift
 
 HOW PAYROLL IS GENERATED:
 NOTE: MONTHLY SALARY IS BASED ON HOURS WORKED, NOT DAYS PRESENT.
 Example shift: 8 am to 5pm with 12pm - 1pm break (8 hours)
 During shift hours: Count normal hours as regular pay so 8 hours * hourly rate.
-Before shift hours: if employee logs in at 7am, 7am -8am hours does not count as hourly salary is only counted DURING SHIFT, so only 8am onwards count. Also works with break time, if employee logs in at 12:30 after break, then 12:30pm – 1pm isn’t counted as only 1pm onwards counts towards hourly rate.
+Before shift hours: if employee logs in at 7am, 7am -8am hours does not count as hourly salary is only counted DURING SHIFT, so only 8am onwards count. Also works with break time, if employee logs in at 12:30 after break, then 12:30pm – 1pm isn't counted as only 1pm onwards counts towards hourly rate.
 --OVERTIME--
 After shift hours: overtime pay. Example employee work 8AM- 9PM, then 5PM- 9PM, 4 hours is considered overtime pay. Overtime pay rate on regular days is 1.25 * the hourly rate of salary
 During weekends (sat sun), if employee works on their shift during weekends, then they have weekend overtime pay. Example employee work Saturday 8AM- 5PM, with 1 hour lunch break (8 hours) is considered overtime pay. Overtime pay rate on rest days (weekend) is 1.5 * the hourly rate of salary.
 
 NOTE: OVERTIME IS ONLY COUNTED IF EMPLOYEE WORKED MORE THAN 2 HOURS OF OVERTIME. 
-Example: if employee logs out at 6pm, since its 1 hour overtime, doesn’t count. Only overtime above 2 hours is counted. 
-Also, overtime is on a day-by-day basis, if employee works 1 hour overtime on Monday and 1 hour overtime on Tuesday, and 3 hours overtime on Wednesday, it doesn’t add up to 5 hours of overtime, since Monday is 1 hour, no overtime pay, Tuesday 1 hour, no overtime pay, but Wednesday 3 hours, then 3 hours is counted.
+Example: if employee logs out at 6pm, since its 1 hour overtime, doesn't count. Only overtime above 2 hours is counted. 
+Also, overtime is on a day-by-day basis, if employee works 1 hour overtime on Monday and 1 hour overtime on Tuesday, and 3 hours overtime on Wednesday, it doesn't add up to 5 hours of overtime, since Monday is 1 hour, no overtime pay, Tuesday 1 hour, no overtime pay, but Wednesday 3 hours, then 3 hours is counted.
 
 
 

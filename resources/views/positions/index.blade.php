@@ -164,6 +164,7 @@
                 <div class="modal-body">
                     <form action="{{ route('position.store') }}" method="POST">
                         @csrf
+                        <input type="hidden" name="source" value="positions">
                         <div class="row mt-3">
                             <div class="col">
                                 <label for="name" class="form-label h5">Position Name:</label>

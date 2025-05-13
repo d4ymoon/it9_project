@@ -13,21 +13,22 @@ return new class extends Migration
     {
         Schema::create('payrolls', function (Blueprint $table) {
             $table->id();
-        $table->unsignedBigInteger('employee_id');
+            $table->unsignedBigInteger('employee_id');
 
-        $table->string('pay_period'); // e.g. '2025-04-01_to_2025-04-15'
+            $table->string('pay_period'); // e.g. '2025-04-01_to_2025-04-15'
 
-        $table->integer('hours_worked')->default(0);
-        $table->decimal('basic_pay', 10, 2)->default(0);
-        $table->decimal('overtime_pay', 10, 2)->default(0);
-        $table->decimal('total_deductions', 10, 2)->default(0);
-        $table->decimal('taxable_income', 10, 2)->default(0);
-        $table->decimal('tax', 10, 2)->default(0);
-        $table->decimal('net_salary', 10, 2)->default(0);
+            $table->integer('hours_worked')->default(0);
+            $table->decimal('basic_pay', 10, 2)->default(0);
+            $table->decimal('overtime_pay', 10, 2)->default(0);
+            $table->decimal('loan_deductions', 10, 2)->default(0);
+            $table->decimal('total_deductions', 10, 2)->default(0);
+            $table->decimal('taxable_income', 10, 2)->default(0);
+            $table->decimal('tax', 10, 2)->default(0);
+            $table->decimal('net_salary', 10, 2)->default(0);
 
-        $table->timestamps();
+            $table->timestamps();
 
-        $table->foreign('employee_id')->references('id')->on('employees')->onDelete('cascade');
+            $table->foreign('employee_id')->references('id')->on('employees')->onDelete('cascade');
         });
     }
 

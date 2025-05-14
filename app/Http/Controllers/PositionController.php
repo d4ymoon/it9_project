@@ -11,11 +11,18 @@ class PositionController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
-        $positions = Position::withCount('employees')->get();
-        return view('positions.index', compact( 'positions'));
+        $query = Position::query();
+
+        // Search by position name
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where('name', 'like', '%' . $search . '%');
+        }
+
+        $positions = $query->latest()->paginate(10);
+        return view('positions.index', compact('positions'));
     }
 
     /**

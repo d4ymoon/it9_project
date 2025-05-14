@@ -10,11 +10,18 @@ class ContributionTypeController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
-        $contributionTypes = ContributionType::all();
-        return view('contributions.index', compact('contributionTypes'));
+        $query = ContributionType::query();
+
+        // Search by contribution type name
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where('name', 'like', '%' . $search . '%');
+        }
+
+        $contributionTypes = $query->latest()->paginate(10);
+        return view('contributiontypes.index', compact('contributionTypes'));
     }
 
     /**

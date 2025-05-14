@@ -18,11 +18,11 @@ class EmployeeAndAttendanceSeeder extends Seeder
         // 1. Get the existing Morning Shift
         $shift = Shift::where('name', 'Morning')->firstOrFail();
 
-        // 2. Create Staff Position
-        $position = Position::create([
-            'name' => 'Staff',
-            'salary' => 10000.00,
-        ]);
+        // 2. Get or Create Staff Position
+        $position = Position::firstOrCreate(
+            ['name' => 'Staff'],
+            ['salary' => 10000.00]
+        );
 
         // 3. Create 3 Employees with their Users
         $employees = [
@@ -55,7 +55,9 @@ class EmployeeAndAttendanceSeeder extends Seeder
                 'position_id' => $position->id,
                 'shift_id' => $shift->id,
                 'hire_date' => '2025-01-01',
-                'payment_method' => 'cash',
+                'payment_method' => $employeeData['name'] === 'Alice Smith' ? 'bank' : 'cash',
+                'bank_name' => $employeeData['name'] === 'Alice Smith' ? 'Metro Bank' : null,
+                'bank_acct' => $employeeData['name'] === 'Alice Smith' ? '555555555' : null,
                 'status' => 'active'
             ]);
 

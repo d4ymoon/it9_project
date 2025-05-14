@@ -15,12 +15,21 @@ class EmployeeController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {   
-        $shifts = Shift::all();
+        $query = Employee::with(['position', 'contributions.contributionType', 'shift']);
+
+        // Search by employee name
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('email', 'like', '%' . $search . '%');
+        }
+
+        $employees = $query->latest()->paginate(10);
         $positions = Position::all();
-        $employees = Employee::with(['payslips', 'contributions.contributionType'])->get();
         $contributionTypes = ContributionType::all();
+        $shifts = Shift::all();
 
         return view('employees.index', compact('employees', 'positions', 'contributionTypes', 'shifts'));
     }

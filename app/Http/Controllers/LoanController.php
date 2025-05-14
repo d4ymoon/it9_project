@@ -11,10 +11,31 @@ class LoanController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $loans = Loan::with('employee')->latest()->get();
+        $query = Loan::with('employee')->latest();
+
+        // Search by employee name
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('employee', function($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%');
+            });
+        }
+
+        // Filter by loan type
+        if ($request->filled('loan_type')) {
+            $query->where('loan_type', $request->loan_type);
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $loans = $query->paginate(10);
         $employees = Employee::all();
+        
         return view('loans.index', compact('loans', 'employees'));
     }
 

@@ -50,7 +50,7 @@
                           
                        <hr>
                     <li>
-                        <a href="dashboard.php" class="nav-link align-middle px-2" target="content-frame" onclick="saveIframePage('dashboard.php')">
+                        <a href="{{ route('dashboard2') }}" class="nav-link align-middle px-2" target="content-frame" onclick="saveIframePage('{{ route('dashboard2') }}')">
                              <span> <i class="bi bi-speedometer"></i> <span class="sidebar-text"> Dashboard</span></span>
                         </a>
                     </li>
@@ -76,12 +76,6 @@
                     </li>
 
                     <li>
-                        <a href="{{ route('payslips.payrolls') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('payslips.payrolls') }}')">
-                            <i class="bi bi-cash-stack"></i> <span class="sidebar-text">Payrolls</span>
-                        </a>
-                    </li>
-
-                    <li>
                         <a href="{{ route('payslips.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('payslips.index') }}')">
                             <i class="bi bi-receipt"></i> <span class="sidebar-text">Payslips</span>
                         </a>
@@ -89,7 +83,7 @@
 
                     <li>
                         <a href="{{ route('payslips.reports') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('payslips.reports') }}')">
-                            <i class="bi bi-graph-up"></i> <span class="sidebar-text">Reports</span>
+                            <i class="bi bi-cash-stack"></i> <span class="sidebar-text">Payrolls</span>
                         </a>
                     </li>
 

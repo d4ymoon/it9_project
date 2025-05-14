@@ -42,6 +42,14 @@ Route::middleware('auth')->group(function () {
         return view('dashboard.index1');
     })->name('dashboard');
 
+    Route::get('/dashboard2', function () {
+        if (Auth::user()->role !== 'admin') {
+            Auth::logout();
+            return redirect('/login')->with('error', 'Please login as admin.');
+        }
+        return view('dashboard.index2');
+    })->name('dashboard2');
+
     // Admin-only routes - protected by role check in controllers
     Route::resource('positions', PositionController::class);
     Route::resource('employees', EmployeeController::class);
@@ -69,4 +77,11 @@ Route::middleware('auth')->group(function () {
     // Profile routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+
+  Route::get('/empattendance', function () {
+    return view('empattendance.index');
+})->name('empattendance.index');
+
+    
 });

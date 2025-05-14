@@ -58,8 +58,8 @@
 </head>
 <body>
     <div class="header">
-        <h2>Company Name</h2>
-        <p>123 Company Street, City, Country</p>
+        <h2>Damondamon Casan Payroll</h2>
+        <p>Matina, Davao City, Philippines</p>
     </div>
 
     <div class="status">

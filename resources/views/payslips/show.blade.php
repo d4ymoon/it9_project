@@ -45,8 +45,8 @@
             <div class="card-body">
                 <!-- Company Header -->
                 <div class="text-center mb-4">
-                    <h3>Company Name</h3>
-                    <p>123 Company Street, City, Country</p>
+                    <h3>Damondamon Casan Payroll</h3>
+                    <p>Matina, Davao City, Philippines</p>
                 </div>
 
                 <!-- Payment Status Badge -->

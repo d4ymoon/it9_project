@@ -12,10 +12,17 @@ class ShiftController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
-        $shifts = Shift::all();
+        $query = Shift::query();
+
+        // Search by shift name
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where('name', 'like', '%' . $search . '%');
+        }
+
+        $shifts = $query->latest()->paginate(10);
         return view('shifts.index', compact('shifts'));
     }
 

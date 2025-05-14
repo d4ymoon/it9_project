@@ -20,10 +20,32 @@ class PayslipController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $payslips = Payslip::with('employee.position')->latest()->get();
-        return view('payslips.index1', compact('payslips'));
+        $query = Payslip::with('employee.position')->latest();
+
+        // Filter by month
+        if ($request->filled('month')) {
+            $date = Carbon::parse($request->month . '-01');
+            $query->where('pay_period', 'like', $date->format('Y-m') . '%');
+        }
+
+        // Search by employee name
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('employee', function($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%');
+            });
+        }
+
+        // Get min and max dates for the month filter
+        $minDate = Payslip::min('pay_period');
+        $maxDate = Payslip::max('pay_period');
+        $minDate = $minDate ? Carbon::parse(explode('_', $minDate)[0])->format('Y-m') : now()->format('Y-m');
+        $maxDate = $maxDate ? Carbon::parse(explode('_', $maxDate)[0])->format('Y-m') : now()->format('Y-m');
+
+        $payslips = $query->paginate(10);
+        return view('payslips.index1', compact('payslips', 'minDate', 'maxDate'));
     }
 
     /**

@@ -11,15 +11,36 @@
 
 <body class="default-padding theme1">
     <div class="container-fluid">
-        <!-- Search and Add Button Row -->
-        <div class="row mt-2">
-            <form action="" method="GET" class="col-auto d-flex justify-content-start align-items-center">
-                <label for="searchInput" class="label me-2">Search:</label>
-                <div class="input-group">
-                    <input type="text" class="form-control" id="searchInput" name="query" style="width: 190px;">
-                    <button class="btn btn-dark"><i class="bi bi-search"></i></button>
-                </div>
-            </form>
+        <!-- Search and Filter Row -->
+        <div class="row mt-2 align-items-end">
+            <div class="col-auto">
+                <form action="{{ route('payslips.index') }}" method="GET" class="row g-3 align-items-end">
+                    <!-- Month Filter -->
+                    <div class="col-auto">
+                        <label for="month" class="form-label">Month:</label>
+                        <input type="month" class="form-control" id="month" name="month" 
+                               value="{{ request('month') }}"
+                               min="{{ $minDate }}" max="{{ $maxDate }}">
+                    </div>
+
+                    <!-- Search -->
+                    <div class="col-auto">
+                        <label for="search" class="form-label">Search Employee:</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ request('search') }}" placeholder="Employee name...">
+                            <button class="btn btn-dark" type="submit"><i class="bi bi-search"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Reset Button -->
+                    <div class="col-auto">
+                        <a href="{{ route('payslips.index') }}" class="btn btn-secondary">Reset Filters</a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Action Buttons -->
             <div class="col d-flex justify-content-end ms-auto">
                 <a href="{{ route('payslips.reports') }}" class="btn btn-info me-2">
                     <i class="bi bi-graph-up"></i> View Reports
@@ -96,6 +117,11 @@
                     @endforeach
                 </tbody>
             </table>
+
+            <!-- Pagination -->
+            <div class="d-flex justify-content-center mt-3">
+                {{ $payslips->appends(request()->query())->links() }}
+            </div>
         </div>
     </div>
 

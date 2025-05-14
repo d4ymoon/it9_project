@@ -20,7 +20,7 @@
                 <i class="bi bi-person-circle"></i> {{ Auth::user()->name }}</a>
                 <ul class="dropdown-menu">
                     <li>
-                        <a href="javascript:void(0)" class="dropdown-item" onclick="window.top.location.href='{{ route('profile.edit') }}'">
+                        <a href="{{ route('profile.edit') }}" class="dropdown-item">
                             <i class="bi bi-person"></i> Profile
                         </a>
                     </li>
@@ -43,15 +43,15 @@
                     <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center " id="menu">
 
                     <li>
-                        <h5 href="" class="nav-link align-middle px-2" onclick="toggleSidebar()" disabled style="user-select: none; cursor: pointer;">  
-                        <i class="bi bi-list"></i> <span class="sidebar-text align-items-center" disabled><b>Payroll System</b></span>
+                        <h5 class="nav-link align-middle px-2" onclick="toggleSidebar()" style="user-select: none; cursor: pointer;">  
+                        <i class="bi bi-list"></i> <span class="sidebar-text align-items-center"><b>Payroll System</b></span>
                         </h5>
                     </li>
                           
                        <hr>
                     <li>
                         <a href="{{ route('dashboard2') }}" class="nav-link align-middle px-2" target="content-frame" onclick="saveIframePage('{{ route('dashboard2') }}')">
-                             <span> <i class="bi bi-speedometer"></i> <span class="sidebar-text"> Dashboard</span></span>
+                             <i class="bi bi-speedometer"></i> <span class="sidebar-text">Dashboard</span></span>
                         </a>
                     </li>
                     <li>
@@ -82,7 +82,7 @@
                     </li>
 
                     <li>
-                        <a href="{{ route('payslips.reports') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('payslips.reports') }}')">
+                        <a href="{{ route('payslips.payrolls') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('payslips.payrolls') }}')">
                             <i class="bi bi-cash-stack"></i> <span class="sidebar-text">Payrolls</span>
                         </a>
                     </li>
@@ -101,7 +101,7 @@
 
                     <li>
                         <a href="{{ route('attendances.create') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('attendances.create') }}')">
-                            <i class="bi bi-person-check"></i> <span class="sidebar-text">Employee attendace</span>
+                            <i class="bi bi-person-check"></i> <span class="sidebar-text">Employee attendance</span>
                         </a>
                     </li>
                    
@@ -142,7 +142,7 @@
     }
 
     window.onload = function () {
-        var lastPage = localStorage.getItem('lastIframePage') || 'dashboard.php';
+        var lastPage = localStorage.getItem('lastIframePage') || '{{ route("dashboard2") }}';
         document.getElementById('contentFrame').src = lastPage;
         highlightActiveLink(lastPage);
     }

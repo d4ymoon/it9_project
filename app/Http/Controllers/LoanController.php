@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Loan;
 use App\Models\Employee;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class LoanController extends Controller
 {
@@ -115,5 +116,15 @@ class LoanController extends Controller
 
         return redirect()->route('loans.index')
             ->with('success', 'Loan deleted successfully.');
+    }
+
+    public function employeeLoans()
+    {
+        $employee = Auth::user()->employee;
+        $loans = Loan::where('employee_id', $employee->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('employee.loans.index', compact('loans'));
     }
 }

@@ -5,7 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Attendance;
 use App\Models\Employee;
-use Carbon\Carbon; 
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class AttendanceController extends Controller
 {
@@ -238,5 +239,15 @@ class AttendanceController extends Controller
 
         return redirect()->route('attendances.index')
             ->with('success', 'Attendance record deleted successfully');
+    }
+
+    public function employeeAttendance()
+    {
+        $employee = Auth::user()->employee;
+        $attendances = Attendance::where('employee_id', $employee->id)
+            ->orderBy('date', 'desc')
+            ->paginate(10);
+
+        return view('employee.attendance.index', compact('attendances'));
     }
 }

@@ -31,7 +31,7 @@
         <div class="card shadow-sm">
             <div class="card-body">
                 <div class="text-center mb-4">
-                    <h3 class="card-title">Welcome Back Admin</h3>
+                    <h3 class="card-title">Welcome Back</h3>
                     <p class="text-muted">Please sign in to continue</p>
                 </div>
 
@@ -44,10 +44,10 @@
                 <form method="POST" action="/login">
                     @csrf
                     <div class="mb-3">
-                        <input name="login" 
-                               type="text" 
+                        <input name="email" 
+                               type="email" 
                                class="form-control" 
-                               placeholder="Email or Employee ID" 
+                               placeholder="Email Address" 
                                required 
                                autofocus>
                     </div>

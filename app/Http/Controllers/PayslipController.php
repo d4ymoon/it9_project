@@ -14,6 +14,7 @@ use App\Models\Shift;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Auth;
 
 class PayslipController extends Controller
 {
@@ -394,5 +395,15 @@ class PayslipController extends Controller
         ];
 
         return view('payslips.payroll-details', compact('payslips', 'summary'));
+    }
+
+    public function employeePayslips()
+    {
+        $employee = Auth::user()->employee;
+        $payslips = Payslip::where('employee_id', $employee->id)
+            ->orderBy('month', 'desc')
+            ->paginate(10);
+
+        return view('employee.payslips.index', compact('payslips'));
     }
 }

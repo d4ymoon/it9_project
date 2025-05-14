@@ -22,35 +22,36 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-// Admin Dashboard & Features - Protected by auth middleware
-Route::middleware('auth')->group(function () {
-    // Redirect root to dashboard
-    Route::get('/', function () {
-        if (Auth::user()->role !== 'admin') {
-            Auth::logout();
-            return redirect('/login')->with('error', 'Please login as admin.');
-        }
-        return view('dashboard.index1');
-    });
+// Redirect root to appropriate dashboard based on role
+Route::get('/', function () {
+    if (!Auth::check()) {
+        return redirect('/login');
+    }
+    return Auth::user()->role === 'admin' 
+        ? redirect('/admin/dashboard')
+        : redirect('/employee/dashboard');
+});
 
-    // Admin dashboard
+// Admin Routes
+Route::middleware(['web', 'auth', \App\Http\Middleware\AdminMiddleware::class])->prefix('admin')->group(function () {
     Route::get('/dashboard', function () {
-        if (Auth::user()->role !== 'admin') {
-            Auth::logout();
-            return redirect('/login')->with('error', 'Please login as admin.');
-        }
         return view('dashboard.index1');
-    })->name('dashboard');
+    })->name('admin.dashboard');
 
     Route::get('/dashboard2', function () {
-        if (Auth::user()->role !== 'admin') {
-            Auth::logout();
-            return redirect('/login')->with('error', 'Please login as admin.');
-        }
         return view('dashboard.index2');
     })->name('dashboard2');
 
-    // Admin-only routes - protected by role check in controllers
+    // Payslip routes
+    Route::get('payslips/payrolls', [PayslipController::class, 'payrolls'])->name('payslips.payrolls');
+    Route::get('payslips/payrolls/{payPeriod}', [PayslipController::class, 'payrollDetails'])->name('payslips.payroll-details');
+    Route::get('payslips/reports', [PayslipController::class, 'reports'])->name('payslips.reports');
+    Route::get('payslips/reports/{payPeriod}', [PayslipController::class, 'reportDetails'])->name('payslips.report-details');
+    Route::get('payslips/{payslip}/pdf', [PayslipController::class, 'generatePDF'])->name('payslips.pdf');
+    Route::patch('payslips/{payslip}/mark-paid', [PayslipController::class, 'markAsPaid'])->name('payslips.mark-paid');
+    Route::post('payslips/generate', [PayslipController::class, 'generate'])->name('payslips.generate');
+
+    // Resource routes
     Route::resource('positions', PositionController::class);
     Route::resource('employees', EmployeeController::class);
     Route::resource('attendances', AttendanceController::class);
@@ -58,30 +59,38 @@ Route::middleware('auth')->group(function () {
     Route::resource('contributions', ContributionController::class);
     Route::resource('contributiontypes', ContributionTypeController::class);
     Route::resource('loans', LoanController::class);
-
-    // Payslip routes
-    Route::get('/payslips/payrolls', [PayslipController::class, 'payrolls'])->name('payslips.payrolls');
-    Route::get('/payslips/payrolls/{payPeriod}', [PayslipController::class, 'payrollDetails'])->name('payslips.payroll-details');
-    Route::get('/payslips/reports', [PayslipController::class, 'reports'])->name('payslips.reports');
-    Route::get('/payslips/reports/{payPeriod}', [PayslipController::class, 'reportDetails'])->name('payslips.report-details');
-    Route::get('/payslips/{payslip}/pdf', [PayslipController::class, 'generatePDF'])->name('payslips.pdf');
-    Route::patch('/payslips/{payslip}/mark-paid', [PayslipController::class, 'markAsPaid'])->name('payslips.mark-paid');
-    Route::post('/payslips/generate', [PayslipController::class, 'generate'])->name('payslips.generate');
     Route::resource('payslips', PayslipController::class);
 
     // Additional admin routes
-    Route::put('/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
-    Route::put('/employees/{employee}/update-role', [EmployeeController::class, 'updateRole'])->name('employees.updateRole');
-    Route::post('/positions/store', [PositionController::class, 'store'])->name('position.store');
+    Route::put('employees/{employee}/update-role', [EmployeeController::class, 'updateRole'])->name('employees.updateRole');
+    Route::post('positions/store', [PositionController::class, 'store'])->name('position.store');
+});
 
-    // Profile routes
+// Employee Routes
+Route::middleware(['web', 'auth', \App\Http\Middleware\EmployeeMiddleware::class])->prefix('employee')->group(function () {
+    Route::get('/dashboard', function () {
+        return view('employee.index');
+    })->name('employee.dashboard');
+    
+    // Employee attendance routes
+    Route::get('/attendance/create', [AttendanceController::class, 'create'])->name('employee.attendance.create');
+    Route::post('/attendance', [AttendanceController::class, 'store'])->name('employee.attendance.store');
+    Route::get('/attendance', [AttendanceController::class, 'employeeAttendance'])->name('employee.attendance.index');
+    
+    // Employee loan view route
+    Route::get('/loans', [LoanController::class, 'employeeLoans'])->name('employee.loans.index');
+    
+    // Employee payslip view route
+    Route::get('/payslips', [PayslipController::class, 'employeePayslips'])->name('employee.payslips.index');
+});
+
+// Profile routes - accessible by both admin and employee
+Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+});
 
-
-  Route::get('/empattendance', function () {
+// Public attendance route
+Route::get('/empattendance', function () {
     return view('empattendance.index');
 })->name('empattendance.index');
-
-    
-});

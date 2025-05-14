@@ -51,7 +51,6 @@ class AttendanceController extends Controller
      */
     public function create()
     {
-        //
         return view('attendance.create');
     }
 
@@ -62,34 +61,117 @@ class AttendanceController extends Controller
     {
         $validated = $request->validate([
             'employee_id' => 'required|exists:employees,id',
-            'date' => 'required|date',
-            'time_in' => 'nullable',
-            'break_out' => 'nullable',
-            'break_in' => 'nullable',
-            'time_out' => 'nullable',
-            'status' => 'required|in:Present,Absent,Half Day,Leave',
+            'current_time' => 'required',
         ]);
 
-        // If status is Leave, we don't need time entries
-        if ($validated['status'] === 'Leave') {
-            $validated['time_in'] = null;
-            $validated['break_out'] = null;
-            $validated['break_in'] = null;
-            $validated['time_out'] = null;
-        } else {
-            // Combine date with time fields if they exist
-            $fields = ['time_in', 'break_out', 'break_in', 'time_out'];
-            foreach ($fields as $field) {
-                if (!empty($validated[$field])) {
-                    $validated[$field] = $validated['date'] . ' ' . $validated[$field];
-                }
+        $employee = Employee::with('shift')->findOrFail($validated['employee_id']);
+        
+        if (!$employee->shift) {
+            return redirect()->back()->with('error', 'No shift assigned to this employee.');
+        }
+
+        $now = Carbon::createFromFormat('H:i:s', $validated['current_time']);
+        $today = Carbon::today();
+        $date = $today->format('Y-m-d');
+
+        // Get shift times for today
+        $shiftStart = Carbon::parse($date . ' ' . $employee->shift->start_time);
+        $breakStart = Carbon::parse($date . ' ' . $employee->shift->break_start_time);
+        $breakEnd = Carbon::parse($date . ' ' . $employee->shift->break_end_time);
+        $shiftEnd = Carbon::parse($date . ' ' . $employee->shift->end_time);
+
+        // Handle shifts that might end after midnight
+        if ($shiftEnd->lt($shiftStart)) {
+            $shiftEnd->addDay();
+        }
+
+        $nextShiftStart = $shiftStart->copy()->addDay();
+
+        // Get today's attendance record
+        $attendance = Attendance::where('employee_id', $validated['employee_id'])
+            ->whereDate('date', $date)
+            ->first();
+
+        if (!$attendance) {
+            // First login attempt of the day
+            if ($now->between($breakStart, $shiftEnd)) {
+                // Logged in during second half
+                $attendance = new Attendance([
+                    'employee_id' => $validated['employee_id'],
+                    'date' => $date,
+                    'break_in' => $now,
+                    'status' => 'Half Day'
+                ]);
+                $attendance->save();
+                return redirect()->back()->with('success', 'Logged in for second half of shift.');
+            } elseif ($now->lt($breakStart)) {
+                // Logged in during first half
+                $attendance = new Attendance([
+                    'employee_id' => $validated['employee_id'],
+                    'date' => $date,
+                    'time_in' => $now,
+                    'status' => 'Present'
+                ]);
+                $attendance->save();
+                return redirect()->back()->with('success', 'Logged in for first half of shift.');
+            } else {
+                // Trying to login after shift ends without prior login
+                return redirect()->back()->with('error', 'Cannot start attendance after shift hours.');
             }
         }
 
-        Attendance::create($validated);
+        // Handle existing attendance record
+        if ($attendance->time_in && !$attendance->break_out && $now->between($breakStart, $breakEnd)) {
+            // First half logout (break start)
+            $attendance->break_out = $now;
+            $attendance->save();
+            return redirect()->back()->with('success', 'Break time started.');
+        }
 
-        return redirect()->route('attendances.index')
-            ->with('success', 'Attendance record added successfully');
+        if ($attendance->break_out && !$attendance->break_in && $now->between($breakEnd, $shiftEnd->copy()->addHours(6))) {
+            // Second half login (break end)
+            $attendance->break_in = $now;
+            $attendance->save();
+            return redirect()->back()->with('success', 'Break ended, second half started.');
+        }
+
+        if ($attendance->break_in && !$attendance->time_out && $now->gte($breakEnd)) {
+            // Final logout
+            $attendance->time_out = $now;
+
+            // Determine final status
+            if ($attendance->time_in && $attendance->break_out && $attendance->break_in && $attendance->time_out) {
+                $attendance->status = 'Present';
+            } elseif ($attendance->time_in && $attendance->break_out && !$attendance->break_in && $now->gt($nextShiftStart)) {
+                $attendance->status = 'Absent';
+            } elseif ($attendance->break_in && !$attendance->time_out && $now->gt($nextShiftStart)) {
+                $attendance->status = 'Absent';
+            } elseif ($attendance->time_in && $attendance->break_out && !$attendance->break_in) {
+                $attendance->status = 'Half Day';
+            }
+
+            $attendance->save();
+            return redirect()->back()->with('success', 'Shift completed. Time out recorded.');
+        }
+
+        return redirect()->back()->with('error', 'Invalid attendance action for current time.');
+    }
+
+    /**
+     * Get appropriate success message based on attendance state
+     */
+    private function getSuccessMessage($attendance)
+    {
+        if ($attendance->time_in && !$attendance->break_out) {
+            return 'First half attendance started.';
+        } elseif ($attendance->time_in && $attendance->break_out && !$attendance->break_in) {
+            return 'First half completed. Break started.';
+        } elseif ($attendance->break_in && !$attendance->time_out) {
+            return 'Second half attendance started.';
+        } elseif ($attendance->time_out) {
+            return 'Attendance completed for the day.';
+        }
+        return 'Attendance logged successfully.';
     }
 
     /**
@@ -124,14 +206,12 @@ class AttendanceController extends Controller
             'status' => 'required|in:Present,Absent,Half Day,Leave',
         ]);
 
-        // If status is Leave, we don't need time entries
         if ($validated['status'] === 'Leave') {
             $validated['time_in'] = null;
             $validated['break_out'] = null;
             $validated['break_in'] = null;
             $validated['time_out'] = null;
         } else {
-            // Combine date with time fields
             $fields = ['time_in', 'break_out', 'break_in', 'time_out'];
             foreach ($fields as $field) {
                 if (!empty($validated[$field])) {
@@ -153,6 +233,10 @@ class AttendanceController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $attendance = Attendance::findOrFail($id);
+        $attendance->delete();
+
+        return redirect()->route('attendances.index')
+            ->with('success', 'Attendance record deleted successfully');
     }
 }

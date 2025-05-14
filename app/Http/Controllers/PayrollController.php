@@ -2,28 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Payroll;
+use App\Models\Employee;
+use App\Models\Payslip;
+use App\Models\Contribution;
+use App\Models\ContributionType;
+use App\Models\Loan;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
-use App\Models\Employee;
 use App\Models\Attendance;
 use App\Models\Shift;
 use Carbon\CarbonPeriod;
-use App\Models\Loan;
-use App\Models\Contribution;
-use App\Models\ContributionType;
 use Illuminate\Support\Facades\Log;
 
-class PayrollController extends Controller
+class PayslipController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        //
-        $payrolls = Payroll::all();
-    return view('payrolls.index1', compact('payrolls'));
+        $payslips = Payslip::all();
+        return view('payslips.index1', compact('payslips'));
     }
 
     /**
@@ -31,7 +30,7 @@ class PayrollController extends Controller
      */
     public function create()
     {
-        //
+        return view('payslips.create');
     }
 
     /**
@@ -39,95 +38,83 @@ class PayrollController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        // Validation logic here
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Payroll $payroll)
+    public function show(Payslip $payslip)
     {
-        //
+        return view('payslips.show', compact('payslip'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Payroll $payroll)
+    public function edit(Payslip $payslip)
     {
-        //
+        return view('payslips.edit', compact('payslip'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Payroll $payroll)
+    public function update(Request $request, Payslip $payslip)
     {
-        //
+        // Update logic here
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Payroll $payroll)
+    public function destroy(Payslip $payslip)
     {
         try {
-            $payroll->delete();
-            return redirect()->route('payrolls.index')->with('success', 'Payroll record deleted successfully.');
+            $payslip->delete();
+            return redirect()->route('payslips.index')->with('success', 'Payslip record deleted successfully.');
         } catch (\Exception $e) {
-            return redirect()->route('payrolls.index')->with('error', 'Error deleting payroll record.');
+            return redirect()->route('payslips.index')->with('error', 'Error deleting payslip record.');
         }
     }
 
     public function generate(Request $request)
-    {
-        // Set timezone to Manila
-        date_default_timezone_set('Asia/Manila');
-        
-        $request->validate([
-            'pay_frequency' => 'required|in:monthly,semi_monthly',
-            'pay_month' => 'required',
-            'pay_year' => 'required',
-            'pay_period_choice' => 'required_if:pay_frequency,semi_monthly|in:first_half,second_half',
-        ]);
+{
+        // Validate request
+    $request->validate([
+            'pay_period' => 'required|string',
+            'period_type' => 'required|in:monthly,semi-monthly'
+    ]);
 
-        // Create the date from the month and year inputs
-        $selectedDate = Carbon::create($request->pay_year, $request->pay_month, 1)->timezone('Asia/Manila');
-        $payFrequency = $request->pay_frequency;
+        $payPeriod = $request->pay_period;
+        $periodType = $request->period_type;
 
-        // For Monthly Payroll
-        if ($payFrequency === 'monthly') {
-            $start = $selectedDate->copy()->startOfMonth();
-            $end = $selectedDate->copy()->endOfMonth();
-            $taxMethod = 'calculateMonthlyTax';
-        } 
-        // For Semi-Monthly Payroll
-        else {
-            if ($request->pay_period_choice === 'first_half') {
-                $start = $selectedDate->copy()->startOfMonth();
-                $end = $selectedDate->copy()->day(15);
-            } else {
-                $start = $selectedDate->copy()->day(16);
-                $end = $selectedDate->copy()->endOfMonth();
-            }
-            $taxMethod = 'calculateSemiTax';
+        // Get all active employees
+        $employees = Employee::where('status', 'active')->get();
+
+        if ($periodType === 'monthly') {
+            // For Monthly Payslip
+            $workingDays = 22; // Assuming 22 working days per month
+            $workingHours = $workingDays * 8; // 8 hours per day
+        } else {
+            // For Semi-Monthly Payslip
+            $workingDays = 11; // Half of monthly working days
+            $workingHours = $workingDays * 8;
         }
 
-        $payPeriod = $start->format('Y-m-d') . '_to_' . $end->format('Y-m-d');
-
-        // Check if any payrolls exist for this period
-        $existingPayrolls = Payroll::where('pay_period', $payPeriod)->exists();
-        if ($existingPayrolls) {
-            return redirect()->back()->with('error', 'Payroll records already exist for this period.');
+        // Check if any payslips exist for this period
+        $existingPayslips = Payslip::where('pay_period', $payPeriod)->exists();
+        if ($existingPayslips) {
+            return redirect()->back()->with('error', 'Payslip records already exist for this period.');
         }
 
-        // Debug information
-        echo "<pre>Generating payroll for period: " . $payPeriod . "</pre>";
+        // Start generating payslips
+        echo "<pre>Generating payslip for period: " . $payPeriod . "</pre>";
 
-        // Loop through employees and generate payroll
-        foreach (Employee::all() as $employee) {
+        // Loop through employees and generate payslip
+        foreach ($employees as $employee) {
             echo "<pre>Processing employee: " . $employee->id . "</pre>";
-            
+
             $monthlySalary = $employee->position->salary;
             $semiMonthlySalary = $monthlySalary / 2;
 
@@ -139,11 +126,11 @@ class PayrollController extends Controller
             }
 
             // Calculate standard working hours
-            $workingDays = collect(CarbonPeriod::create($start, $end))
-                ->filter(function ($date) {
+            $workingDays = collect(CarbonPeriod::create($payPeriod))
+            ->filter(function ($date) {
                     return $date->isWeekday();
-                });
-            $workingDaysCount = $workingDays->count();
+            });
+        $workingDaysCount = $workingDays->count();
 
             echo "<pre>Working days in period: " . $workingDaysCount . "</pre>";
 
@@ -155,13 +142,13 @@ class PayrollController extends Controller
             echo "<pre>Monthly salary: " . $monthlySalary . "</pre>";
             echo "<pre>Hourly rate: " . $hourlyRate . "</pre>";
 
-            $totalRegularHours = 0;
-            $totalWeekdayOvertimeHours = 0;
-            $totalWeekendHours = 0;
+$totalRegularHours = 0;
+$totalWeekdayOvertimeHours = 0;
+$totalWeekendHours = 0;
 
             // Process attendance records
             $attendanceRecords = Attendance::where('employee_id', $employee->id)
-                ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+                ->whereBetween('date', [$payPeriod])
                 ->where(function($query) {
                     $query->where('status', '!=', 'Absent')
                           ->orWhere('status', 'Leave');
@@ -185,11 +172,11 @@ class PayrollController extends Controller
                 // Skip if no time records
                 if (!$record->time_in || !$record->time_out) {
                     echo "<pre>Incomplete time records for date: " . $record->date . "</pre>";
-                    continue;
-                }
+    continue;
+}
 
                 $isWeekend = Carbon::parse($record->date)->isWeekend();
-                
+
                 // Get shift times for this day
                 $shiftStart = Carbon::parse($record->date . ' ' . $shift->start_time)->timezone('Asia/Manila');
                 $breakStart = Carbon::parse($record->date . ' ' . $shift->break_start_time)->timezone('Asia/Manila');
@@ -202,12 +189,12 @@ class PayrollController extends Controller
                      ", End: " . $shiftEnd->format('Y-m-d H:i:s') . "</pre>";
 
                 // Handle overnight shifts
-                if ($shiftEnd->lt($shiftStart)) {
-                    $shiftEnd->addDay();
-                }
+    if ($shiftEnd->lt($shiftStart)) {
+        $shiftEnd->addDay();
+    }
                 if ($breakEnd->lt($breakStart)) {
-                    $breakEnd->addDay();
-                }
+        $breakEnd->addDay();
+    }
 
                 // Parse actual times worked
                 $timeIn = Carbon::parse($record->time_in)->timezone('Asia/Manila');
@@ -241,15 +228,15 @@ class PayrollController extends Controller
                     $secondHalfMinutes = $breakIn->diffInMinutes($endTime);
                     $workedMinutes += $secondHalfMinutes;
                     echo "<pre>Second half minutes: " . $secondHalfMinutes . " (from " . $breakIn->format('H:i:s') . " to " . $endTime->format('H:i:s') . ")</pre>";
-                }
+    }
 
-                $workedHours = $workedMinutes / 60;
+    $workedHours = $workedMinutes / 60;
                 echo "<pre>Total worked hours for " . $record->date . ": " . $workedHours . "</pre>";
 
-                if ($isWeekend) {
+    if ($isWeekend) {
                     // For weekends, only count hours if more than 2 hours worked
                     if ($workedHours > 2) {
-                        $totalWeekendHours += $workedHours;
+        $totalWeekendHours += $workedHours;
                         echo "<pre>Added weekend hours: " . $workedHours . "</pre>";
                     }
                 } else {
@@ -263,7 +250,7 @@ class PayrollController extends Controller
                         }
                         $totalRegularHours += 8; // Cap regular hours at 8
                         echo "<pre>Added regular hours (capped): 8</pre>";
-                    } else {
+    } else {
                         $totalRegularHours += $workedHours;
                         echo "<pre>Added regular hours: " . $workedHours . "</pre>";
                     }
@@ -276,7 +263,7 @@ class PayrollController extends Controller
 
             // Calculate basic pay based on hours worked
             $basicPay = $totalRegularHours * $hourlyRate;
-            if ($payFrequency === 'semi_monthly') {
+            if ($periodType === 'semi-monthly') {
                 $basicPay = min($basicPay, $semiMonthlySalary); // Cap at semi-monthly salary
             } else {
                 $basicPay = min($basicPay, $monthlySalary); // Cap at monthly salary
@@ -292,6 +279,32 @@ class PayrollController extends Controller
             $totalDeductions = 0;
             $contributionDeductions = 0;
 
+            // Calculate loan deductions
+            $loanDeductions = 0;
+            $activeLoans = Loan::where('employee_id', $employee->id)
+                ->where('status', 'active')
+                ->where('remaining_balance', '>', 0)
+                ->get();
+
+            foreach ($activeLoans as $loan) {
+                // Calculate loan deduction based on percentage of basic pay
+                $loanDeduction = min(
+                    $loan->remaining_balance,
+                    ($basicPay * $loan->deduction_percentage / 100)
+                );
+                
+                $loanDeductions += $loanDeduction;
+
+                // Update remaining balance
+                $loan->remaining_balance = max(0, $loan->remaining_balance - $loanDeduction);
+                if ($loan->remaining_balance == 0) {
+                    $loan->status = 'paid';
+                }
+                $loan->save();
+        
+                echo "<pre>Processed loan deduction: " . $loanDeduction . " for loan ID: " . $loan->id . "</pre>";
+            }
+
             // Process contributions
             $contributions = $employee->contributions;
             foreach ($contributions as $contribution) {
@@ -302,64 +315,50 @@ class PayrollController extends Controller
                 }
             }
 
-            $totalDeductions = $contributionDeductions;
-            echo "<pre>Total deductions: " . $totalDeductions . "</pre>";
+            $totalDeductions = $contributionDeductions + $loanDeductions;
+            echo "<pre>Total deductions: " . $totalDeductions . " (Contributions: " . $contributionDeductions . ", Loans: " . $loanDeductions . ")</pre>";
 
-            // Calculate taxable income and tax
+        // Calculate taxable income and tax
             $taxableIncome = max(0, $basicPay + $overtimePay - $totalDeductions);
-            $tax = $employee->$taxMethod($taxableIncome);
+            $tax = $employee->calculateTax($taxableIncome);
 
             echo "<pre>Final calculations - Taxable Income: " . $taxableIncome . ", Tax: " . $tax . "</pre>";
 
-            // Create payroll record
-            Payroll::create([
-                'employee_id' => $employee->id,
-                'pay_period' => $payPeriod,
-                'hours_worked' => $totalRegularHours + $totalWeekdayOvertimeHours + $totalWeekendHours,
+            // Create payslip record
+            Payslip::create([
+            'employee_id' => $employee->id,
+            'pay_period' => $payPeriod,
+                'period_type' => $periodType,
                 'basic_pay' => max(0, $basicPay),
                 'overtime_pay' => max(0, $overtimePay),
-                'total_deductions' => max(0, $totalDeductions),
-                'taxable_income' => $taxableIncome,
+            'hours_worked' => $totalRegularHours + $totalWeekdayOvertimeHours + $totalWeekendHours,
+                'overtime_hours' => $overtimeHours,
                 'tax' => max(0, $tax),
-                'net_salary' => max(0, $taxableIncome - $tax)
-            ]);
+                'total_deductions' => max(0, $totalDeductions),
+                'loan_deductions' => max(0, $loanDeductions),
+                'net_salary' => max(0, $taxableIncome - $tax),
+                'payment_status' => 'pending'
+        ]);
 
-            echo "<pre>Created payroll record for employee " . $employee->id . "</pre>";
+            echo "<pre>Created payslip record for employee " . $employee->id . "</pre>";
         }
 
-    
+        return redirect()->route('payslips.index')->with('success', 'Payslips generated successfully.');
     }
 
-    public function calculateSemiTax($taxable_income) {
-        if ($taxable_income <= 10417) {
-            return 0;
-        } elseif ($taxable_income <= 16666) {
-            return 0 + 0.15 * ($taxable_income - 10417);
-        } elseif ($taxable_income <= 33332) {
-            return 1250 + 0.20 * ($taxable_income - 16667);
-        } elseif ($taxable_income <= 83332) {
-            return 5416.67 + 0.25 * ($taxable_income - 33333);
-        } elseif ($taxable_income <= 333332) {
-            return 20416.67 + 0.30 * ($taxable_income - 83333);
-        } else {
-            return 100416.67 + 0.35 * ($taxable_income - 333333);
-        }
+    public function calculateTax($taxable_income) {
+    if ($taxable_income <= 10417) {
+        return 0;
+    } elseif ($taxable_income <= 16666) {
+        return 0 + 0.15 * ($taxable_income - 10417);
+    } elseif ($taxable_income <= 33332) {
+        return 1250 + 0.20 * ($taxable_income - 16667);
+    } elseif ($taxable_income <= 83332) {
+        return 5416.67 + 0.25 * ($taxable_income - 33333);
+    } elseif ($taxable_income <= 333332) {
+        return 20416.67 + 0.30 * ($taxable_income - 83333);
+    } else {
+        return 100416.67 + 0.35 * ($taxable_income - 333333);
     }
-
-    public function calculateMonthlyTax(float $taxable_income): float
-    {
-        if ($taxable_income <= 20_833) {
-            return 0.0;
-        } elseif ($taxable_income <= 33_332) {
-            return ($taxable_income - 20_833) * 0.15;
-        } elseif ($taxable_income <= 66_666) {
-            return 1_875.00 + ($taxable_income - 33_333) * 0.20;
-        } elseif ($taxable_income <= 166_666) {
-            return 8_541.80 + ($taxable_income - 66_667) * 0.25;
-        } elseif ($taxable_income <= 666_666) {
-            return 33_541.80 + ($taxable_income - 166_667) * 0.30;
-        } else {
-            return 183_541.80 + ($taxable_income - 666_667) * 0.35;
-        }
-    }
+}
 }

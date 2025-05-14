@@ -14,7 +14,7 @@ class ContributionTypeController extends Controller
     {
         //
         $contributionTypes = ContributionType::all();
-        return view('contribution.index', compact('contributionTypes'));
+        return view('contributions.index', compact('contributionTypes'));
     }
 
     /**

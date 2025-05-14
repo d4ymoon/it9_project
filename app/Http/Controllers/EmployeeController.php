@@ -19,7 +19,7 @@ class EmployeeController extends Controller
     {   
         $shifts = Shift::all();
         $positions = Position::all();
-        $employees = Employee::with(['payroll', 'contributions.contributionType'])->get();
+        $employees = Employee::with(['payslips', 'contributions.contributionType'])->get();
         $contributionTypes = ContributionType::all();
 
         return view('employees.index', compact('employees', 'positions', 'contributionTypes', 'shifts'));
@@ -103,7 +103,7 @@ class EmployeeController extends Controller
         $employee->payment_method = $request->payment_method;
         $employee->shift_id = $request->shift_id;
     
-        // Save the updated payroll
+        // Save the updated employee record
         $employee->save();
     
         return redirect()->route('employees.index')->with('success', 'Employee updated successfully.');
@@ -128,27 +128,27 @@ class EmployeeController extends Controller
     }
 
     public function updateRole(Request $request, Employee $employee)
-    {
-        $request->validate([
-            'role' => 'required|in:employee,admin,hr',
-        ]);
+{
+    $request->validate([
+        'role' => 'required|in:employee,admin,hr',
+    ]);
 
-        // Make sure employee has a user
-        if (!$employee->user) {
-            return redirect()->back()->with('error', 'No user account linked to this employee.');
-        }
+    // Make sure employee has a user
+    if (!$employee->user) {
+        return redirect()->back()->with('error', 'No user account linked to this employee.');
+    }
 
-        // Only admins can change roles
+    // Only admins can change roles
         $currentUser = auth()->user();
         if (!$currentUser || $currentUser->role !== 'admin') {
-            abort(403);
-        }
-
-        $employee->user->role = $request->input('role');
-        $employee->user->save();
-
-        return redirect()->back()->with('success', 'User role updated successfully.');
+        abort(403);
     }
+
+    $employee->user->role = $request->input('role');
+    $employee->user->save();
+
+    return redirect()->back()->with('success', 'User role updated successfully.');
+}
 
     private function calculateTax($basicPay)
     {

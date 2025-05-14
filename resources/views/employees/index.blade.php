@@ -84,7 +84,7 @@
                         <th style="width:220px">Shift</th>
                         <th style="width:220px">Hire Date</th>
                         <th style="width:220px">Bank Account</th>
-                        <th style="width:275px">Actions {{ auth()->user()->role }}</th>
+                        <th style="width:275px">Actions</th>
                     </tr>
                 </thead>
                 <tbody>

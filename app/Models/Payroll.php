@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Payroll extends Model
+class Payslip extends Model
 {
     //
     protected $fillable = [
@@ -13,10 +13,12 @@ class Payroll extends Model
         'hours_worked',
         'basic_pay',
         'overtime_pay',
+        'loan_deductions',
         'total_deductions',
         'taxable_income',
         'tax',
-        'net_salary'
+        'net_salary',
+        'payment_status'
     ];
 
     public function employee()

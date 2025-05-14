@@ -20,7 +20,7 @@
                 <i class="bi bi-person-circle"></i> {{ Auth::user()->name }}</a>
                 <ul class="dropdown-menu">
                     <li>
-                        <a href="#" class="dropdown-item">
+                        <a href="javascript:void(0)" class="dropdown-item" onclick="window.top.location.href='{{ route('profile.edit') }}'">
                             <i class="bi bi-person"></i> Profile
                         </a>
                     </li>
@@ -74,26 +74,39 @@
                             <i class="bi bi-people"></i> <span class="sidebar-text">Employees</span>
                         </a>
                     </li>
+
                     <li>
-                        <a href="{{ route('payrolls.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('payrolls.index') }}')">
-                            <i class="bi bi-receipt"></i> <span class="sidebar-text">Payrolls</span>
+                        <a href="{{ route('payslips.payrolls') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('payslips.payrolls') }}')">
+                            <i class="bi bi-cash-stack"></i> <span class="sidebar-text">Payrolls</span>
                         </a>
                     </li>
 
                     <li>
+                        <a href="{{ route('payslips.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('payslips.index') }}')">
+                            <i class="bi bi-receipt"></i> <span class="sidebar-text">Payslips</span>
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="{{ route('payslips.reports') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('payslips.reports') }}')">
+                            <i class="bi bi-graph-up"></i> <span class="sidebar-text">Reports</span>
+                        </a>
+                    </li>
+
+                    <li class="mt-2">
                         <a href="{{ route('loans.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('loans.index') }}')">
                             <i class="bi bi-cash-coin"></i> <span class="sidebar-text">Loans</span>
                         </a>
                     </li>
 
                     <li>
-                        <a href="{{ route('attendance.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('attendance.index') }}')">
+                        <a href="{{ route('attendances.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('attendances.index') }}')">
                             <i class="bi bi-journal"></i> <span class="sidebar-text">Attendance Records</span>
                         </a>
                     </li>
 
                     <li>
-                        <a href="{{ route('attendance.create') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('attendance.create') }}')">
+                        <a href="{{ route('attendances.create') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('attendances.create') }}')">
                             <i class="bi bi-person-check"></i> <span class="sidebar-text">Employee attendace</span>
                         </a>
                     </li>

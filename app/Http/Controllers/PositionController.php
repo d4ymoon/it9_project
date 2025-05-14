@@ -86,16 +86,16 @@ class PositionController extends Controller
             $affectedEmployees = \App\Models\Employee::where('position_id', $position->id)->get();
     
             foreach ($affectedEmployees as $employee) {
-                $payroll = $employee->payroll;
-                if ($payroll) {
+                // Update latest payslip if exists
+                $latestPayslip = $employee->payslips()->latest()->first();
+                if ($latestPayslip) {
                     $basicPay = $validated['salary'];
                     $tax = $this->calculateTax($basicPay);
                     $taxableIncome = $basicPay;
                     $netSalary = $taxableIncome - $tax;
     
-                    $payroll->update([
+                    $latestPayslip->update([
                         'basic_pay' => $basicPay,
-                        'taxable_income' => $taxableIncome,
                         'tax' => $tax,
                         'net_salary' => $netSalary,
                     ]);

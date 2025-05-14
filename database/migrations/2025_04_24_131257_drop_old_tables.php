@@ -11,10 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('payslips', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+        // Drop old tables in the correct order (considering foreign key constraints)
+        Schema::dropIfExists('payrolls');
+        Schema::dropIfExists('loan_types');
     }
 
     /**
@@ -22,6 +21,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('payslips');
+        // We don't recreate these tables as they're being replaced or removed
     }
-};
+}; 

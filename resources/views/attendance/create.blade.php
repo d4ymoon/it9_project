@@ -36,15 +36,24 @@
             font-weight: bold;
             margin-bottom: 15px;
         }
+
+        .attendance-info {
+            font-size: 18px;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
     </style>
 </head>
 <body>
     <div class="container mt-5">
-        <h2 class="text-center mb-4">Employee Attendance Tracker</h3>   
+        <h2 class="text-center mb-4">Employee Attendance Tracker</h2>   
         <div class="container mt-5" style="width: 500px;">
             <div id="clock" class="text-center"></div>
             <div id="date" class="text-center mb-1"></div>
             <div id="shift-display" class="text-center"></div>
+            <div id="attendance-phase" class="text-center attendance-info"></div>
 
             @error('employee_id')
                 <div class="error alert alert-danger mx-5">{{ $message }}</div>
@@ -59,14 +68,18 @@
             @endif
         </div>
        
-        <form method="POST" action="{{ route('attendance.store') }}" style="width: 400px;" class="mx-auto mt-3 h2">
+        <form method="POST" action="{{ route('attendances.store') }}" style="width: 400px;" class="mx-auto mt-3 h2">
             @csrf
+            <input type="hidden" id="current_time" name="current_time" value="">
             <input type="hidden" id="shift" name="shift" value="">
             <div class="mb-3">
                 <label for="employee_id" class="form-label h5">Employee ID:</label>
-                <input type="number" class="form-control" id="employee_id" name="employee_id" required placeholder="Enter your ID" min="1">
+                <input type="number" class="form-control" id="employee_id" name="employee_id" required placeholder="Enter your ID" min="1" value="{{ old('employee_id') }}">
+                @error('employee_id')
+                    <div class="text-danger">{{ $message }}</div>
+                @enderror
             </div>
-            <button type="submit" class="btn btn-primary w-100">Submit</button>
+            <button type="submit" class="btn btn-primary w-100">Log Attendance</button>
         </form>
     </div>
 
@@ -76,16 +89,32 @@
             const hours = now.getHours();
             const minutes = now.getMinutes();
             
+            // Format current time for the hidden input
+            const timeString = now.toLocaleTimeString('en-US', { hour12: false });
+            document.getElementById('current_time').value = timeString;
+            
+            // Determine the current phase of attendance
+            let attendancePhase = '';
+            if (hours < 8) {
+                attendancePhase = 'Before Shift (First Half starts at 8:00 AM)';
+            } else if (hours < 12) {
+                attendancePhase = 'First Half of Shift (8:00 AM - 12:00 PM)';
+            } else if (hours === 12) {
+                attendancePhase = 'Break Time (12:00 PM - 1:00 PM)';
+            } else if (hours < 17) {
+                attendancePhase = 'Second Half of Shift (1:00 PM - 5:00 PM)';
+            } else {
+                attendancePhase = 'After Shift Hours (Overtime if logged in during shift)';
+            }
+            document.getElementById('attendance-phase').innerText = attendancePhase;
+            
             // Determine the current shift
             let shift;
-            if ((hours >= 0 && hours < 12) || (hours === 12 && minutes === 0)) {
-                shift = 'morning';
+            if (hours < 12) {
+                shift = 'first_half';
             } else {
-                shift = 'afternoon';
+                shift = 'second_half';
             }
-            
-            // Display the current shift
-            document.getElementById('shift-display').innerText = `Current Shift: ${shift.toUpperCase()}`;
             document.getElementById('shift').value = shift;
             
             // Clock display

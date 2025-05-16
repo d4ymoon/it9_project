@@ -39,6 +39,17 @@
             </div>
         </div>
 
+        <!-- Contributions Card -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Contributions</h5>
+                    <p class="card-text">View your contribution records and history.</p>
+                    <a href="{{ route('employee.contributions') }}" class="btn btn-primary w-100">View Contributions</a>
+                </div>
+            </div>
+        </div>
+
         <!-- Profile Card -->
         <div class="col-md-6 col-lg-3 mb-4">
             <div class="card h-100">
@@ -49,9 +60,16 @@
                         <strong>Position:</strong> {{ Auth::user()->employee->position->name }}<br>
                         <strong>Email:</strong> {{ Auth::user()->email }}
                     </p>
+                    <a href="{{ route('employee.change-password.form') }}" class="btn btn-outline-primary w-100">Change Password</a>
                 </div>
             </div>
         </div>
     </div>
+
+    @if(session('success'))
+        <div class="alert alert-success mt-4">
+            {{ session('success') }}
+        </div>
+    @endif
 </div>
 @endsection 

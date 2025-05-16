@@ -101,7 +101,7 @@ class AttendanceController extends Controller
                     'employee_id' => $validated['employee_id'],
                     'date' => $date,
                     'break_in' => $now,
-                    'status' => 'Half Day'
+                    'status' => 'Half Day'  // Will be marked as Absent if no logout
                 ]);
                 $attendance->save();
                 return redirect()->back()->with('success', 'Logged in for second half of shift.');
@@ -111,7 +111,7 @@ class AttendanceController extends Controller
                     'employee_id' => $validated['employee_id'],
                     'date' => $date,
                     'time_in' => $now,
-                    'status' => 'Present'
+                    'status' => 'Present'  // Will be marked as Absent if no complete sequence
                 ]);
                 $attendance->save();
                 return redirect()->back()->with('success', 'Logged in for first half of shift.');
@@ -122,40 +122,53 @@ class AttendanceController extends Controller
         }
 
         // Handle existing attendance record
-        if ($attendance->time_in && !$attendance->break_out && $now->between($breakStart, $breakEnd)) {
+        if ($attendance->time_in && !$attendance->break_out) {
             // First half logout (break start)
             $attendance->break_out = $now;
+            $attendance->status = 'Partial';  // Marked as Partial if they don't complete the sequence
             $attendance->save();
             return redirect()->back()->with('success', 'Break time started.');
         }
 
-        if ($attendance->break_out && !$attendance->break_in && $now->between($breakEnd, $shiftEnd->copy()->addHours(6))) {
+        if ($attendance->break_out && !$attendance->break_in) {
             // Second half login (break end)
             $attendance->break_in = $now;
+            $attendance->status = 'Partial';  // Will be marked as Absent if no logout
             $attendance->save();
             return redirect()->back()->with('success', 'Break ended, second half started.');
         }
 
-        if ($attendance->break_in && !$attendance->time_out && $now->gte($breakEnd)) {
-            // Final logout
+        if ($attendance->break_in && !$attendance->time_out) {
+            // Final logout - Complete attendance sequence
             $attendance->time_out = $now;
 
-            // Determine final status
+            // Calculate total hours worked
+            $totalHours = 0;
+            if ($attendance->time_in && $attendance->break_out) {
+                $firstHalf = Carbon::parse($attendance->break_out)->diffInMinutes(Carbon::parse($attendance->time_in));
+                $totalHours += $firstHalf / 60;
+            }
+            if ($attendance->break_in && $attendance->time_out) {
+                $secondHalf = Carbon::parse($attendance->time_out)->diffInMinutes(Carbon::parse($attendance->break_in));
+                $totalHours += $secondHalf / 60;
+            }
+
+            // Only mark as Present if complete sequence and sufficient hours
             if ($attendance->time_in && $attendance->break_out && $attendance->break_in && $attendance->time_out) {
-                $attendance->status = 'Present';
-            } elseif ($attendance->time_in && $attendance->break_out && !$attendance->break_in && $now->gt($nextShiftStart)) {
+                if ($totalHours >= 8) {
+                    $attendance->status = 'Present';
+                } else {
+                    $attendance->status = 'Partial';
+                }
+            } else {
                 $attendance->status = 'Absent';
-            } elseif ($attendance->break_in && !$attendance->time_out && $now->gt($nextShiftStart)) {
-                $attendance->status = 'Absent';
-            } elseif ($attendance->time_in && $attendance->break_out && !$attendance->break_in) {
-                $attendance->status = 'Half Day';
             }
 
             $attendance->save();
             return redirect()->back()->with('success', 'Shift completed. Time out recorded.');
         }
 
-        return redirect()->back()->with('error', 'Invalid attendance action for current time.');
+        return redirect()->back()->with('error', 'Invalid attendance action. Please check your attendance sequence.');
     }
 
     /**
@@ -204,7 +217,7 @@ class AttendanceController extends Controller
             'break_out' => 'nullable',
             'break_in' => 'nullable',
             'time_out' => 'nullable',
-            'status' => 'required|in:Present,Absent,Half Day,Leave',
+            'status' => 'required|in:Present,Absent,Half Day,Leave,Partial',
         ]);
 
         if ($validated['status'] === 'Leave') {
@@ -220,6 +233,11 @@ class AttendanceController extends Controller
                 } else {
                     $validated[$field] = null;
                 }
+            }
+
+            // Auto-mark as Absent if sequence is incomplete at end of day
+            if ($validated['time_in'] && (!$validated['break_out'] || !$validated['break_in'] || !$validated['time_out'])) {
+                $validated['status'] = 'Absent';
             }
         }
 

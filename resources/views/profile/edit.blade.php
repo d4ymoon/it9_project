@@ -5,7 +5,7 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="mb-3">
-                <a href="{{ route('dashboard') }}" class="btn btn-outline-secondary">
+                <a href="{{ route('dashboard.index1') }}" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left"></i> Back to Dashboard
                 </a>
             </div>

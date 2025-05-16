@@ -13,6 +13,7 @@ use App\Http\Controllers\LoanController;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\EmployeeDashboardController;
 
 // Auth Routes
 Route::middleware('guest')->group(function () {
@@ -82,6 +83,13 @@ Route::middleware(['web', 'auth', \App\Http\Middleware\EmployeeMiddleware::class
     
     // Employee payslip view route
     Route::get('/payslips', [PayslipController::class, 'employeePayslips'])->name('employee.payslips.index');
+
+    // Password change routes
+    Route::get('/change-password', [EmployeeDashboardController::class, 'showChangePasswordForm'])->name('employee.change-password.form');
+    Route::post('/change-password', [EmployeeDashboardController::class, 'changePassword'])->name('employee.change-password');
+
+    // Employee contributions route
+    Route::get('/contributions', [EmployeeDashboardController::class, 'contributions'])->name('employee.contributions');
 });
 
 // Profile routes - accessible by both admin and employee

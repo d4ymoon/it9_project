@@ -73,7 +73,7 @@
                             <th style="width:80px">ID</th>
                             <th style="width:200px">Name</th>
                             <th style="width:120px">Salary</th>
-                            <th style="width:120px">Employees</th>
+                            
                             <th style="width:200px">Actions</th>
                         </tr>
                     </thead>
@@ -83,7 +83,7 @@
                                 <td>{{ $position->id }}</td>
                                 <td>{{ $position->name }}</td>
                                 <td>₱{{ number_format($position->salary, 2) }}</td>
-                                <td>{{ $position->employees_count ?? 0 }}</td>
+                               
                                 <td class="text-nowrap" style="width:200px">
                                     <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
                                         data-bs-target="#editPositionModal{{ $position->id }}">
@@ -142,7 +142,7 @@
             </div>
         </div>
     </div>
-
+  
     
 
     <!--- NEW POSITION MODAL --->

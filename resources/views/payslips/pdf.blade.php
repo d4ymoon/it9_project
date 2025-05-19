@@ -5,23 +5,13 @@
     <title>Payslip - {{ $employee->name }}</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'DejaVu Sans', sans-serif;
             margin: 0;
             padding: 20px;
         }
         .header {
             text-align: center;
             margin-bottom: 30px;
-        }
-        .status {
-            text-align: right;
-            margin-bottom: 20px;
-        }
-        .status-badge {
-            padding: 5px 10px;
-            border-radius: 4px;
-            color: white;
-            background-color: {{ $payslip->payment_status === 'paid' ? '#28a745' : '#ffc107' }};
         }
         table {
             width: 100%;
@@ -85,7 +75,7 @@
             </tr>
             <tr>
                 <td>Pay Period:</td>
-                <td>{{ str_replace('_to_', ' to ', $payslip->pay_period) }}</td>
+                <td>{{ \Carbon\Carbon::parse(explode('_', $payslip->pay_period)[0])->format('F d, Y') }} to {{ \Carbon\Carbon::parse(explode('_', $payslip->pay_period)[2])->format('F d, Y') }}</td>
             </tr>
             <tr>
                 <td>Hours Worked:</td>
@@ -116,8 +106,17 @@
         <h3>Deductions</h3>
         <table>
             <tr>
-                <td>Contributions</td>
-                <td align="right">₱{{ number_format($payslip->total_deductions - $payslip->loan_deductions, 2) }}</td>
+                <td colspan="2"><strong>Contributions</strong></td>
+            </tr>
+            @foreach($payslip->contributions['details'] as $type => $amount)
+            <tr>
+                <td style="padding-left: 20px;">{{ $type }}</td>
+                <td align="right">₱{{ number_format($amount, 2) }}</td>
+            </tr>
+            @endforeach
+            <tr class="total-row">
+                <td><strong>Total Contributions</strong></td>
+                <td align="right"><strong>₱{{ number_format($payslip->contributions['total'], 2) }}</strong></td>
             </tr>
             <tr>
                 <td>Loan Deductions</td>
@@ -128,8 +127,8 @@
                 <td align="right">₱{{ number_format($payslip->tax, 2) }}</td>
             </tr>
             <tr class="total-row">
-                <td>Total Deductions</td>
-                <td align="right">₱{{ number_format($payslip->total_deductions + $payslip->tax, 2) }}</td>
+                <td><strong>Total Deductions</strong></td>
+                <td align="right"><strong>₱{{ number_format($payslip->total_deductions + $payslip->tax, 2) }}</strong></td>
             </tr>
         </table>
     </div>

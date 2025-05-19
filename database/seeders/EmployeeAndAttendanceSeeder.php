@@ -10,6 +10,8 @@ use App\Models\User;
 use App\Models\Attendance;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
+use App\Models\ContributionType;
+use App\Models\Contribution;
 
 class EmployeeAndAttendanceSeeder extends Seeder
 {
@@ -24,7 +26,12 @@ class EmployeeAndAttendanceSeeder extends Seeder
             ['salary' => 10000.00]
         );
 
-        // 3. Create 3 Employees with their Users
+        // 3. Get contribution types
+        $gsisType = ContributionType::where('name', 'GSIS')->first();
+        $philhealthType = ContributionType::where('name', 'PhilHealth')->first();
+        $pagibigType = ContributionType::where('name', 'Pag-IBIG')->first();
+
+        // 4. Create 3 Employees with their Users
         $employees = [
             [
                 'name' => 'Alice Smith',
@@ -73,6 +80,31 @@ class EmployeeAndAttendanceSeeder extends Seeder
             // Link the user to the employee
             $employee->user_id = $user->id;
             $employee->save();
+
+            // Create mandatory contributions for all employees
+            // GSIS Contribution
+            Contribution::create([
+                'employee_id' => $employee->id,
+                'contribution_type_id' => $gsisType->id,
+                'calculation_type' => 'salary_based',
+                'value' => 0 // Default value, will be calculated during payslip generation
+            ]);
+
+            // PhilHealth Contribution
+            Contribution::create([
+                'employee_id' => $employee->id,
+                'contribution_type_id' => $philhealthType->id,
+                'calculation_type' => 'salary_based',
+                'value' => 0 // Default value, will be calculated during payslip generation
+            ]);
+
+            // Pag-IBIG Contribution
+            Contribution::create([
+                'employee_id' => $employee->id,
+                'contribution_type_id' => $pagibigType->id,
+                'calculation_type' => 'salary_based',
+                'value' => 0 // Default value, will be calculated during payslip generation
+            ]);
 
             // Generate Attendance Records (March-April 2025)
             $startDate = Carbon::create(2025, 3, 1);

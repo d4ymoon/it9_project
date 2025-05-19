@@ -44,6 +44,7 @@ class EmployeeAndAttendanceSeeder2 extends Seeder
         // 3. Get contribution types
         $gsisType = ContributionType::where('name', 'GSIS')->first();
         $philhealthType = ContributionType::where('name', 'PhilHealth')->first();
+        $pagibigType = ContributionType::where('name', 'Pag-IBIG')->first();
 
         // 4. Create 15 Employees with their Users
         $employees = [
@@ -53,24 +54,21 @@ class EmployeeAndAttendanceSeeder2 extends Seeder
                 'email' => 'michael.chen@company.com',
                 'contact_number' => '09111222333',
                 'position_id' => $createdPositions[0]->id,
-                'attendance_pattern' => 'overtime',
-                'contributions' => ['GSIS' => 10, 'PhilHealth' => 5]
+                'attendance_pattern' => 'overtime'
             ],
             [
                 'name' => 'Sarah Johnson',
                 'email' => 'sarah.johnson@company.com',
                 'contact_number' => '09222333444',
                 'position_id' => $createdPositions[0]->id,
-                'attendance_pattern' => 'punctual',
-                'contributions' => ['GSIS' => 10]
+                'attendance_pattern' => 'punctual'
             ],
             [
                 'name' => 'David Kim',
                 'email' => 'david.kim@company.com',
                 'contact_number' => '09333444555',
                 'position_id' => $createdPositions[0]->id,
-                'attendance_pattern' => 'overtime',
-                'contributions' => ['PhilHealth' => 5]
+                'attendance_pattern' => 'overtime'
             ],
             
             // HR Managers
@@ -79,40 +77,35 @@ class EmployeeAndAttendanceSeeder2 extends Seeder
                 'email' => 'emily.rodriguez@company.com',
                 'contact_number' => '09444555666',
                 'position_id' => $createdPositions[1]->id,
-                'attendance_pattern' => 'punctual',
-                'contributions' => ['GSIS' => 10, 'PhilHealth' => 5]
+                'attendance_pattern' => 'punctual'
             ],
             [
                 'name' => 'James Wilson',
                 'email' => 'james.wilson@company.com',
                 'contact_number' => '09555666777',
                 'position_id' => $createdPositions[1]->id,
-                'attendance_pattern' => 'late',
-                'contributions' => ['GSIS' => 10]
+                'attendance_pattern' => 'late'
             ],
             [
                 'name' => 'Maria Garcia',
                 'email' => 'maria.garcia@company.com',
                 'contact_number' => '09666777888',
                 'position_id' => $createdPositions[1]->id,
-                'attendance_pattern' => 'punctual',
-                'contributions' => ['PhilHealth' => 5]
+                'attendance_pattern' => 'punctual'
             ],
             [
                 'name' => 'Robert Lee',
                 'email' => 'robert.lee@company.com',
                 'contact_number' => '09777888999',
                 'position_id' => $createdPositions[1]->id,
-                'attendance_pattern' => 'overtime',
-                'contributions' => []
+                'attendance_pattern' => 'overtime'
             ],
             [
                 'name' => 'Lisa Chen',
                 'email' => 'lisa.chen@company.com',
                 'contact_number' => '09888999000',
                 'position_id' => $createdPositions[1]->id,
-                'attendance_pattern' => 'late',
-                'contributions' => ['GSIS' => 10, 'PhilHealth' => 5]
+                'attendance_pattern' => 'late'
             ],
             
             // Marketing Specialists
@@ -121,56 +114,49 @@ class EmployeeAndAttendanceSeeder2 extends Seeder
                 'email' => 'john.martinez@company.com',
                 'contact_number' => '09999000111',
                 'position_id' => $createdPositions[2]->id,
-                'attendance_pattern' => 'punctual',
-                'contributions' => ['GSIS' => 10]
+                'attendance_pattern' => 'punctual'
             ],
             [
                 'name' => 'Anna Kim',
                 'email' => 'anna.kim@company.com',
                 'contact_number' => '09000111222',
                 'position_id' => $createdPositions[2]->id,
-                'attendance_pattern' => 'overtime',
-                'contributions' => ['PhilHealth' => 5]
+                'attendance_pattern' => 'overtime'
             ],
             [
                 'name' => 'Thomas Wang',
                 'email' => 'thomas.wang@company.com',
                 'contact_number' => '09111222333',
                 'position_id' => $createdPositions[2]->id,
-                'attendance_pattern' => 'late',
-                'contributions' => []
+                'attendance_pattern' => 'late'
             ],
             [
                 'name' => 'Sofia Santos',
                 'email' => 'sofia.santos@company.com',
                 'contact_number' => '09222333444',
                 'position_id' => $createdPositions[2]->id,
-                'attendance_pattern' => 'punctual',
-                'contributions' => ['GSIS' => 10, 'PhilHealth' => 5]
+                'attendance_pattern' => 'punctual'
             ],
             [
                 'name' => 'Kevin Park',
                 'email' => 'kevin.park@company.com',
                 'contact_number' => '09333444555',
                 'position_id' => $createdPositions[2]->id,
-                'attendance_pattern' => 'overtime',
-                'contributions' => ['GSIS' => 10]
+                'attendance_pattern' => 'overtime'
             ],
             [
                 'name' => 'Rachel Wong',
                 'email' => 'rachel.wong@company.com',
                 'contact_number' => '09444555666',
                 'position_id' => $createdPositions[2]->id,
-                'attendance_pattern' => 'late',
-                'contributions' => ['PhilHealth' => 5]
+                'attendance_pattern' => 'late'
             ],
             [
                 'name' => 'Daniel Lee',
                 'email' => 'daniel.lee@company.com',
                 'contact_number' => '09555666777',
                 'position_id' => $createdPositions[2]->id,
-                'attendance_pattern' => 'overtime',
-                'contributions' => []
+                'attendance_pattern' => 'overtime'
             ]
         ];
 
@@ -202,25 +188,30 @@ class EmployeeAndAttendanceSeeder2 extends Seeder
             $employee->user_id = $user->id;
             $employee->save();
 
-            // Add contributions if any
-            if (!empty($employeeData['contributions'])) {
-                if (isset($employeeData['contributions']['GSIS'])) {
-                    Contribution::create([
-                        'employee_id' => $employee->id,
-                        'contribution_type_id' => $gsisType->id,
-                        'calculation_type' => 'percent',
-                        'value' => $employeeData['contributions']['GSIS']
-                    ]);
-                }
-                if (isset($employeeData['contributions']['PhilHealth'])) {
-                    Contribution::create([
-                        'employee_id' => $employee->id,
-                        'contribution_type_id' => $philhealthType->id,
-                        'calculation_type' => 'percent',
-                        'value' => $employeeData['contributions']['PhilHealth']
-                    ]);
-                }
-            }
+            // Create mandatory contributions for all employees
+            // GSIS Contribution
+            Contribution::create([
+                'employee_id' => $employee->id,
+                'contribution_type_id' => $gsisType->id,
+                'calculation_type' => 'salary_based',
+                'value' => 0 // Default value, will be calculated during payslip generation
+            ]);
+
+            // PhilHealth Contribution
+            Contribution::create([
+                'employee_id' => $employee->id,
+                'contribution_type_id' => $philhealthType->id,
+                'calculation_type' => 'salary_based',
+                'value' => 0 // Default value, will be calculated during payslip generation
+            ]);
+
+            // Pag-IBIG Contribution
+            Contribution::create([
+                'employee_id' => $employee->id,
+                'contribution_type_id' => $pagibigType->id,
+                'calculation_type' => 'salary_based',
+                'value' => 0 // Default value, will be calculated during payslip generation
+            ]);
 
             // Generate Attendance Records (February-April 2025)
             $startDate = Carbon::create(2025, 2, 1);

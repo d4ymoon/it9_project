@@ -56,14 +56,16 @@ class LoanController extends Controller
     {
         $validated = $request->validate([
             'employee_id' => 'required|exists:employees,id',
-            'loan_type' => 'required|string|max:255',
+            'loan_type' => 'required|string',
             'loan_amount' => 'required|numeric|min:0',
-            'deduction_percentage' => 'required|numeric|min:1|max:50', // Maximum 50% of salary can be deducted
+            'interest_rate' => 'required|numeric|min:0|max:100',
+            'deduction_percentage' => 'required|numeric|min:0|max:100',
             'start_date' => 'required|date',
         ]);
 
         $validated['remaining_balance'] = $validated['loan_amount'];
-        
+        $validated['status'] = 'active';
+
         Loan::create($validated);
 
         return redirect()->route('loans.index')
@@ -94,9 +96,10 @@ class LoanController extends Controller
     {
         $validated = $request->validate([
             'employee_id' => 'required|exists:employees,id',
-            'loan_type' => 'required|string|max:255',
+            'loan_type' => 'required|string',
             'loan_amount' => 'required|numeric|min:0',
-            'deduction_percentage' => 'required|numeric|min:1|max:50', // Maximum 50% of salary can be deducted
+            'interest_rate' => 'required|numeric|min:0|max:100',
+            'deduction_percentage' => 'required|numeric|min:0|max:100',
             'start_date' => 'required|date',
             'status' => 'required|in:active,paid,cancelled'
         ]);

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Services\ContributionCalculationService;
 
 class Payslip extends Model
 {
@@ -21,9 +22,55 @@ class Payslip extends Model
         'payment_status'
     ];
 
+    protected $appends = ['contributions'];
+
+    protected $with = ['employee.contributions.contributionType'];
+
+    protected $casts = [
+        'pay_date' => 'date',
+        'basic_pay' => 'decimal:2',
+        'overtime_pay' => 'decimal:2',
+        'holiday_pay' => 'decimal:2',
+        'night_differential' => 'decimal:2',
+        'gross_pay' => 'decimal:2',
+        'sss_deduction' => 'decimal:2',
+        'philhealth_deduction' => 'decimal:2',
+        'pagibig_deduction' => 'decimal:2',
+        'tax_deduction' => 'decimal:2',
+        'loan_deductions' => 'decimal:2',
+        'net_pay' => 'decimal:2',
+        'loan_details' => 'array'
+    ];
+
     public function employee()
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function getContributionsAttribute()
+    {
+        $contributionService = new ContributionCalculationService();
+        $contributions = [];
+        $totalContributions = 0;
+
+        if ($this->employee && $this->employee->contributions) {
+            foreach ($this->employee->contributions as $contribution) {
+                if ($contribution->calculation_type === 'salary_based' && $contribution->contributionType) {
+                    $amount = $contributionService->calculateContribution($this->basic_pay, $contribution);
+                    $contributions[$contribution->contributionType->name] = $amount;
+                    $totalContributions += $amount;
+                }
+            }
+        }
+
+        // Update total_deductions to include contributions
+        $this->total_deductions = $totalContributions + ($this->loan_deductions ?? 0);
+        $this->save();
+
+        return [
+            'details' => $contributions,
+            'total' => $totalContributions
+        ];
     }
 
     public function calculateTax($taxable_income) {
@@ -40,5 +87,28 @@ class Payslip extends Model
         } else {
             return 100416.67 + 0.35 * ($taxable_income - 333333);
         }
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($payslip) {
+            // Calculate contributions when creating a new payslip
+            $contributionService = new ContributionCalculationService();
+            $totalContributions = 0;
+
+            if ($payslip->employee && $payslip->employee->contributions) {
+                foreach ($payslip->employee->contributions as $contribution) {
+                    if ($contribution->calculation_type === 'salary_based' && $contribution->contributionType) {
+                        $amount = $contributionService->calculateContribution($payslip->basic_pay, $contribution);
+                        $totalContributions += $amount;
+                    }
+                }
+            }
+
+            // Set total deductions including contributions and loan deductions
+            $payslip->total_deductions = $totalContributions + ($payslip->loan_deductions ?? 0);
+        });
     }
 }

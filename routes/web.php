@@ -85,6 +85,8 @@ Route::middleware(['web', 'auth', \App\Http\Middleware\EmployeeMiddleware::class
     Route::get('/loans', [LoanController::class, 'employeeLoans'])->name('employee.loans.index');
     
     // Employee payslip view route
+    Route::get('/payslips/{payslip}/pdf', [PayslipController::class, 'generatePDF'])->name('payslips.download');
+    Route::get('/payslips/{payslip}', [PayslipController::class, 'show'])->name('employee.payslips.show');
     Route::get('/payslips', [PayslipController::class, 'employeePayslips'])->name('employee.payslips.index');
 
     // Password change routes

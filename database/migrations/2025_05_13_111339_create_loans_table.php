@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('employee_id')->constrained()->onDelete('cascade');
             $table->string('loan_type');
             $table->decimal('loan_amount', 10, 2);
+            $table->decimal('interest_rate', 5, 2); // % per month, e.g., 1.5 means 1.5%
             $table->decimal('deduction_percentage', 5, 2);
             $table->date('start_date');
             $table->decimal('remaining_balance', 10, 2);

@@ -233,25 +233,9 @@ class PayslipController extends Controller
             $contributionDeductions = 0;
 
             // Process loans
-            $activeLoans = Loan::where('employee_id', $employee->id)
-                ->where('status', 'active')
-                ->where('remaining_balance', '>', 0)
-                ->get();
-
-            foreach ($activeLoans as $loan) {
-                $loanDeduction = min(
-                    $loan->remaining_balance,
-                    ($basicPay * $loan->deduction_percentage / 100)
-                );
-                
-                $loanDeductions += $loanDeduction;
-
-                $loan->remaining_balance = max(0, $loan->remaining_balance - $loanDeduction);
-                if ($loan->remaining_balance == 0) {
-                    $loan->status = 'paid';
-                }
-                $loan->save();
-            }
+            $loanDeductionsData = $this->calculateLoanDeductions($employee, $basicPay);
+            $loanDeductions = $loanDeductionsData['total'];
+            $loanDetails = $loanDeductionsData['details'];
 
             // Process contributions
             foreach ($employee->contributions as $contribution) {
@@ -318,10 +302,9 @@ class PayslipController extends Controller
         return redirect()->back()->with('success', $count . ' payslips marked as paid successfully.');
     }
 
-    public function reports()
+    public function reports(Request $request)
     {
-        // Group payslips by pay period and get summary data
-        $payrollReports = Payslip::selectRaw('
+        $query = Payslip::selectRaw('
             pay_period,
             period_type,
             COUNT(DISTINCT employee_id) as total_employees,
@@ -329,14 +312,31 @@ class PayslipController extends Controller
             SUM(total_deductions) as total_deductions,
             SUM(net_salary) as total_net_pay,
             MIN(created_at) as generated_at
-        ')
-        ->groupBy('pay_period', 'period_type')
-        ->orderBy('generated_at', 'desc')
-        ->get()
-        ->map(function($report) {
-            $report->generated_at = Carbon::parse($report->generated_at);
-            return $report;
-        });
+        ');
+
+        // Apply filters
+        if ($request->filled('month') && $request->filled('year')) {
+            $month = str_pad($request->month, 2, '0', STR_PAD_LEFT);
+            $year = $request->year;
+            $query->where('pay_period', 'like', "{$year}-{$month}%");
+        } elseif ($request->filled('month')) {
+            $month = str_pad($request->month, 2, '0', STR_PAD_LEFT);
+            $query->where('pay_period', 'like', "%-{$month}%");
+        } elseif ($request->filled('year')) {
+            $query->where('pay_period', 'like', "{$request->year}%");
+        }
+
+        if ($request->filled('period_type')) {
+            $query->where('period_type', $request->period_type);
+        }
+
+        $payrollReports = $query->groupBy('pay_period', 'period_type')
+            ->orderBy('generated_at', 'desc')
+            ->get()
+            ->map(function($report) {
+                $report->generated_at = Carbon::parse($report->generated_at);
+                return $report;
+            });
 
         return view('payslips.reports', compact('payrollReports'));
     }
@@ -416,9 +416,43 @@ class PayslipController extends Controller
     {
         $employee = Auth::user()->employee;
         $payslips = Payslip::where('employee_id', $employee->id)
-            ->orderBy('month', 'desc')
+            ->orderBy('pay_period', 'desc')
             ->paginate(10);
 
         return view('employee.payslips.index', compact('payslips'));
+    }
+
+    private function calculateLoanDeductions($employee, $salary)
+    {
+        $totalLoanDeductions = 0;
+        $loanDetails = [];
+
+        $activeLoans = $employee->loans()
+            ->where('status', 'active')
+            ->get();
+
+        foreach ($activeLoans as $loan) {
+            $monthlyInterest = $loan->calculateMonthlyInterest();
+            $monthlyDeduction = $loan->calculateMonthlyDeduction($salary);
+            
+            if ($monthlyDeduction > 0) {
+                $loanDetails[] = [
+                    'type' => $loan->loan_type,
+                    'amount' => $monthlyDeduction,
+                    'interest' => $monthlyInterest,
+                    'total' => $monthlyDeduction + $monthlyInterest
+                ];
+                
+                $totalLoanDeductions += $monthlyDeduction + $monthlyInterest;
+                
+                // Process the loan payment
+                $loan->processMonthlyPayment($salary);
+            }
+        }
+
+        return [
+            'total' => $totalLoanDeductions,
+            'details' => $loanDetails
+        ];
     }
 }

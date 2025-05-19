@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('employee_id');
             $table->unsignedBigInteger('contribution_type_id');
-            $table->enum('calculation_type', ['fixed', 'percent'])->default('fixed');
+            $table->enum('calculation_type', ['fixed', 'percent', 'salary_based'])->default('fixed');
             $table->decimal('value', 10, 2)->default(0);
             $table->timestamps();
         

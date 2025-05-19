@@ -82,43 +82,40 @@
                     <table class="table table-striped table-hover table-bordered">
                         <thead>
                             <tr>
-                                <th style="width:80px">ID</th>
-                                <th style="width:200px">Employee</th>
-                                <th style="width:150px">Loan Type</th>
-                                <th style="width:120px">Amount</th>
-                                <th style="width:120px">Deduction %</th>
-                                <th style="width:120px">Remaining</th>
-                                <th style="width:120px">Start Date</th>
-                                <th style="width:100px">Status</th>
-                                <th style="width:200px">Actions</th>
+                              
+                                <th style="width:">Employee</th>
+                                <th style="width:">Loan Type</th>
+                                <th style="width:">Amount</th>
+                                <th style="width:">Interest Rate</th>
+                                <th style="width:">Deduction %</th>
+                                <th style="width:">Remaining</th>
+                                <th style="width:">Start Date</th>
+                                <th style="width:">Status</th>
+                                <th style="width:">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($loans as $loan)
                                 <tr>
-                                    <td>{{ $loan->id }}</td>
                                     <td>{{ $loan->employee->name }}</td>
                                     <td>{{ $loan->loan_type }}</td>
                                     <td>₱{{ number_format($loan->loan_amount, 2) }}</td>
+                                    <td>{{ $loan->interest_rate }}%</td>
                                     <td>{{ number_format($loan->deduction_percentage, 2) }}%</td>
                                     <td>₱{{ number_format($loan->remaining_balance, 2) }}</td>
                                     <td>{{ $loan->start_date->format('M d, Y') }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ $loan->status === 'active' ? 'success' : ($loan->status === 'paid' ? 'info' : 'danger') }}">
-                                            {{ ucfirst($loan->status) }}
-                                        </span>
-                                    </td>
+                                    <td>{{ ucfirst($loan->status) }}</td>
                                     <td class="text-nowrap">
                                         <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
                                             data-bs-target="#editLoanModal{{ $loan->id }}">
-                                            <i class="bi bi-pencil"></i> Edit
+                                            <i class="bi bi-pencil"></i>
                                         </button>
                                         <form action="{{ route('loans.destroy', $loan) }}" method="POST" class="d-inline">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-sm btn-danger" 
                                                     onclick="return confirm('Are you sure you want to delete this loan?')">
-                                                <i class="bi bi-trash"></i> Delete
+                                                <i class="bi bi-trash"></i>
                                             </button>
                                         </form>
                                     </td>
@@ -159,6 +156,11 @@
                                                         <label for="loan_amount{{ $loan->id }}" class="form-label">Loan Amount</label>
                                                         <input type="number" step="0.01" class="form-control" id="loan_amount{{ $loan->id }}" 
                                                                name="loan_amount" value="{{ $loan->loan_amount }}" required>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="interest_rate{{ $loan->id }}" class="form-label">Interest Rate (%)</label>
+                                                        <input type="number" step="0.01" class="form-control" id="interest_rate{{ $loan->id }}" 
+                                                               name="interest_rate" value="{{ $loan->interest_rate }}" required>
                                                     </div>
                                                     <div class="mb-3">
                                                         <label for="deduction_percentage{{ $loan->id }}" class="form-label">Deduction Percentage</label>
@@ -231,6 +233,11 @@
                             <label for="loan_amount" class="form-label">Loan Amount</label>
                             <input type="number" step="0.01" class="form-control" id="loan_amount" 
                                    name="loan_amount" value="{{ old('loan_amount') }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="interest_rate" class="form-label">Interest Rate (%)</label>
+                            <input type="number" step="0.01" class="form-control" id="interest_rate" 
+                                   name="interest_rate" value="{{ old('interest_rate') }}" required>
                         </div>
                         <div class="mb-3">
                             <label for="deduction_percentage" class="form-label">Deduction Percentage</label>

@@ -73,7 +73,7 @@
                         <table class="table table-borderless">
                             <tr>
                                 <td>Pay Period:</td>
-                                <td>{{ str_replace('_to_', ' to ', $payslip->pay_period) }}</td>
+                                <td>{{ \Carbon\Carbon::parse(explode('_', $payslip->pay_period)[0])->format('F d, Y') }} to {{ \Carbon\Carbon::parse(explode('_', $payslip->pay_period)[2])->format('F d, Y') }}</td>
                             </tr>
                             <tr>
                                 <td>Hours Worked:</td>
@@ -106,8 +106,17 @@
                         <h5>Deductions</h5>
                         <table class="table">
                             <tr>
-                                <td>Contributions</td>
-                                <td class="text-end">₱{{ number_format($payslip->total_deductions - $payslip->loan_deductions, 2) }}</td>
+                                <td colspan="2"><strong>Contributions</strong></td>
+                            </tr>
+                            @foreach($payslip->contributions['details'] as $type => $amount)
+                            <tr>
+                                <td class="ps-4">{{ $type }}</td>
+                                <td class="text-end">₱{{ number_format($amount, 2) }}</td>
+                            </tr>
+                            @endforeach
+                            <tr class="table-secondary">
+                                <td><strong>Total Contributions</strong></td>
+                                <td class="text-end"><strong>₱{{ number_format($payslip->contributions['total'], 2) }}</strong></td>
                             </tr>
                             <tr>
                                 <td>Loan Deductions</td>

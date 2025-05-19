@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="default-padding theme1">
+<body class="default-padding theme1" style="background-color: 	#f8f9fa">
     <div class="container-fluid">
         <!-- Search and Filter Row -->
         <div class="row mt-2 align-items-end">
@@ -17,7 +17,6 @@
                 <form action="{{ route('loans.index') }}" method="GET" class="row g-3 align-items-end">
                     <!-- Search -->
                     <div class="col-auto">
-                        <label for="search" class="form-label">Search Employee:</label>
                         <div class="input-group">
                             <input type="text" class="form-control" id="search" name="search" 
                                    value="{{ request('search') }}" placeholder="Employee name...">
@@ -27,7 +26,6 @@
 
                     <!-- Loan Type Filter -->
                     <div class="col-auto">
-                        <label for="loan_type" class="form-label">Loan Type:</label>
                         <select class="form-select" id="loan_type" name="loan_type">
                             <option value="">All Types</option>
                             <option value="Personal" {{ request('loan_type') == 'Personal' ? 'selected' : '' }}>Personal</option>
@@ -38,7 +36,6 @@
 
                     <!-- Status Filter -->
                     <div class="col-auto">
-                        <label for="status" class="form-label">Status:</label>
                         <select class="form-select" id="status" name="status">
                             <option value="">All Status</option>
                             <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>

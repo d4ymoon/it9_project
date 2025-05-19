@@ -7,8 +7,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
-<body>
-<div class="container-fluid px-4">
+<body style="background-color: 	#f8f9fa">
+<div class="container-fluid px-4" >
     <h1 class="mt-4">Dashboard Statistics</h1>
     <div class="row mt-4">
         <!-- Total Employees Card -->

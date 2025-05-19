@@ -303,6 +303,21 @@ class PayslipController extends Controller
         return redirect()->back()->with('success', 'Payslip marked as paid successfully.');
     }
 
+    public function markAllAsPaid(Request $request)
+    {
+        $query = Payslip::where('payment_status', 'pending');
+        
+        // If month filter is applied
+        if ($request->filled('month')) {
+            $date = Carbon::parse($request->month . '-01');
+            $query->where('pay_period', 'like', $date->format('Y-m') . '%');
+        }
+        
+        $count = $query->update(['payment_status' => 'paid']);
+        
+        return redirect()->back()->with('success', $count . ' payslips marked as paid successfully.');
+    }
+
     public function reports()
     {
         // Group payslips by pay period and get summary data

@@ -41,19 +41,12 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="card mb-5 border-4 {{ $payslip->payment_status === 'paid' ? 'border-success' : 'border-warning' }}">
             <div class="card-body">
                 <!-- Company Header -->
                 <div class="text-center mb-4">
                     <h3>Damondamon Casan Payroll</h3>
                     <p>Matina, Davao City, Philippines</p>
-                </div>
-
-                <!-- Payment Status Badge -->
-                <div class="text-end mb-3">
-                    <span class="badge bg-{{ $payslip->payment_status === 'paid' ? 'success' : 'warning' }}">
-                        {{ ucfirst($payslip->payment_status) }}
-                    </span>
                 </div>
 
                 <!-- Employee Information -->

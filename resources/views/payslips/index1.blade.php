@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
 
-<body class="default-padding theme1">
+<body class="default-padding theme1" style="background-color: 	#f8f9fa">
     <div class="container-fluid">
         <!-- Search and Filter Row -->
         <div class="row mt-2 align-items-end">
@@ -17,15 +17,13 @@
                 <form action="{{ route('payslips.index') }}" method="GET" class="row g-3 align-items-end">
                     <!-- Month Filter -->
                     <div class="col-auto">
-                        <label for="month" class="form-label">Month:</label>
-                        <input type="month" class="form-control" id="month" name="month" 
+                        <input type="month" class="form-control" id="month" name="month" placeholder="Month..." 
                                value="{{ request('month') }}"
                                min="{{ $minDate }}" max="{{ $maxDate }}">
                     </div>
 
                     <!-- Search -->
                     <div class="col-auto">
-                        <label for="search" class="form-label">Search Employee:</label>
                         <div class="input-group">
                             <input type="text" class="form-control" id="search" name="search" 
                                    value="{{ request('search') }}" placeholder="Employee name...">
@@ -48,6 +46,16 @@
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#generatePayslipModal">
                     <i class="bi bi-plus-circle"></i> Generate Payroll
                 </button>
+                @if($payslips->where('payment_status', 'pending')->count() > 0)
+                    <form action="{{ route('payslips.mark-all-paid') }}" method="POST" class="d-inline ms-2" id="markAllPaidForm">
+                        @csrf
+                        @method('PATCH')
+                        <input type="hidden" name="month" value="{{ request('month') }}">
+                        <button type="button" class="btn btn-success" onclick="confirmMarkAllPaid()">
+                            <i class="bi bi-check-all"></i> Mark All as Paid
+                        </button>
+                    </form>
+                @endif
             </div>
         </div>
 
@@ -70,35 +78,32 @@
             <table class="table table-striped table-hover table-bordered">
                 <thead>
                     <tr>
-                        <th style="width:80px">ID</th>
-                        <th style="width:200px">Employee</th>
-                        <th style="width:200px">Pay Period</th>
-                        <th style="width:120px">Basic Pay</th>
-                        <th style="width:120px">Overtime Pay</th>
-                        <th style="width:120px">Deductions</th>
-                        <th style="width:120px">Net Salary</th>
-                        <th style="width:100px">Status</th>
-                        <th style="width:200px">Actions</th>
+                        <th style="width:">Employee</th>
+                        <th style="width:">Pay Period</th>
+                        <th style="width:">Basic Pay</th>
+                        <th style="width:">Overtime Pay</th>
+                        <th style="width:">Deductions</th>
+                        <th style="width:">Net Salary</th>
+                        <th style="width:">Status</th>
+                        <th style="width:">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($payslips as $payslip)
                         <tr>
-                            <td>{{ $payslip->id }}</td>
                             <td>{{ $payslip->employee->name }}</td>
-                            <td>{{ str_replace('_to_', ' to ', $payslip->pay_period) }}</td>
-                            <td>₱{{ number_format($payslip->basic_pay, 2) }}</td>
-                            <td>₱{{ number_format($payslip->overtime_pay, 2) }}</td>
-                            <td>₱{{ number_format($payslip->total_deductions, 2) }}</td>
-                            <td>₱{{ number_format($payslip->net_salary, 2) }}</td>
-                            <td>
-                                <span class="badge bg-{{ $payslip->payment_status === 'paid' ? 'success' : 'warning' }}">
-                                    {{ ucfirst($payslip->payment_status) }}
-                                </span>
-                            </td>
+                            @php
+                                [$start, $end] = explode('_to_', $payslip->pay_period);
+                            @endphp
+                            <td>{{ \Carbon\Carbon::parse($start)->format('M d, Y') }} to {{ \Carbon\Carbon::parse($end)->format('M d, Y') }}</td>
+                            <td style="text-align: right;">₱{{ number_format($payslip->basic_pay, 2) }}</td>
+                            <td style="text-align: right;">₱{{ number_format($payslip->overtime_pay, 2) }}</td>
+                            <td style="text-align: right;">₱{{ number_format($payslip->total_deductions, 2) }}</td>
+                            <td style="text-align: right;">₱{{ number_format($payslip->net_salary, 2) }}</td>
+                            <td>{{ ucfirst($payslip->payment_status) }}</td>
                             <td class="text-nowrap">
                                 <a href="{{ route('payslips.show', $payslip->id) }}" class="btn btn-sm btn-info">
-                                    <i class="bi bi-eye"></i> View
+                                    <i class="bi bi-eye"></i>
                                 </a>
                                 <a href="{{ route('payslips.pdf', $payslip->id) }}" class="btn btn-sm btn-primary">
                                     <i class="bi bi-file-pdf"></i> PDF
@@ -141,5 +146,12 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function confirmMarkAllPaid() {
+            if (confirm('Are you sure you want to mark all pending payslips as paid?')) {
+                document.getElementById('markAllPaidForm').submit();
+            }
+        }
+    </script>
 </body>
 </html> 

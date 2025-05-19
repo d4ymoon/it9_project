@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 
-<body class="default-padding theme1">
+<body class="default-padding theme1" style="background-color: 	#f8f9fa">
 
     <div class="container-fluid">
         @if (session('success'))
@@ -27,15 +27,13 @@
                 <form action="{{ route('attendances.index') }}" method="GET" class="row g-3 align-items-end">
                     <!-- Month Filter -->
                     <div class="col-auto">
-                        <label for="month" class="form-label">Month:</label>
-                        <input type="month" class="form-control" id="month" name="month" 
+                        <input type="month" class="form-control" id="month" name="month" placeholder="Month..." 
                                value="{{ request('month') }}"
                                min="{{ $minDate }}" max="{{ $maxDate }}">
                     </div>
 
                     <!-- Day Filter -->
                     <div class="col-auto">
-                        <label for="date" class="form-label">Specific Day:</label>
                         <input type="date" class="form-control" id="date" name="date" 
                                value="{{ request('date') }}"
                                min="{{ Carbon\Carbon::parse($minDate)->startOfMonth()->toDateString() }}" 
@@ -44,7 +42,6 @@
 
                     <!-- Search -->
                     <div class="col-auto">
-                        <label for="search" class="form-label">Search Employee:</label>
                         <div class="input-group">
                             <input type="text" class="form-control" id="search" name="search" 
                                    value="{{ request('search') }}" placeholder="Employee name...">
@@ -81,7 +78,7 @@
                             <th>Break Time In</th>
                             <th>Time Out</th>
                             <th>Status</th>
-                            <th style="width: 200px;">Actions</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -98,7 +95,7 @@
                                 <td class="text-nowrap">
                                     <!-- Edit Button -->
                                     <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editAttendanceModal{{ $attendance->id }}">
-                                        Edit
+                                         <i class="bi bi-pencil"></i>
                                     </button>
 
                                     <!-- Delete Form -->
@@ -107,7 +104,7 @@
                                         style="display: inline-block; margin: 0;">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+                                        <button class="btn btn-sm btn-danger" type="submit"><i class="bi bi-trash"></i></button>
                                     </form>
                                 </td>
                             </tr>

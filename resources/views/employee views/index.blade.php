@@ -54,42 +54,12 @@
                              <span> <i class="bi bi-speedometer"></i> <span class="sidebar-text"> Dashboard</span></span>
                         </a>
                     </li>
-                    <li>
-                        <a href="{{ route('positions.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('positions.index') }}')">
-                            <i class="bi bi-briefcase"></i> <span class="sidebar-text">Positions</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('shifts.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('shifts.index') }}')">
-                            <i class="bi bi-clock"></i> <span class="sidebar-text">Shift Types</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('contributiontypes.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('contributiontypes.index') }}')">
-                            <i class="bi bi-piggy-bank"></i> <span class="sidebar-text">Contribution Types</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('employees.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('employees.index') }}')">
-                            <i class="bi bi-people"></i> <span class="sidebar-text">Employees</span>
-                        </a>
-                    </li>
-
-                    <li>
-                        <a href="{{ route('payslips.payrolls') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('payslips.payrolls') }}')">
-                            <i class="bi bi-cash-stack"></i> <span class="sidebar-text">Payrolls</span>
-                        </a>
-                    </li>
+                   
+                   
 
                     <li>
                         <a href="{{ route('payslips.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('payslips.index') }}')">
                             <i class="bi bi-receipt"></i> <span class="sidebar-text">Payslips</span>
-                        </a>
-                    </li>
-
-                    <li>
-                        <a href="{{ route('payslips.reports') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('payslips.reports') }}')">
-                            <i class="bi bi-graph-up"></i> <span class="sidebar-text">Reports</span>
                         </a>
                     </li>
 

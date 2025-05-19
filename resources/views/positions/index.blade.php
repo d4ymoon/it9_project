@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 
-<body class="default-padding theme1">
+<body class="default-padding theme1" style="background-color: 	#f8f9fa">
 
 
     <div class="container-fluid">
@@ -21,7 +21,6 @@
                 <form action="{{ route('positions.index') }}" method="GET" class="row g-3 align-items-end">
                     <!-- Search -->
                     <div class="col-auto">
-                        <label for="search" class="form-label">Search Position:</label>
                         <div class="input-group">
                             <input type="text" class="form-control" id="search" name="search" 
                                    value="{{ request('search') }}" placeholder="Position name...">
@@ -70,11 +69,11 @@
                 <table class="table table-striped table-hover table-bordered ">
                     <thead>
                         <tr>
-                            <th style="width:80px">ID</th>
-                            <th style="width:200px">Name</th>
-                            <th style="width:120px">Salary</th>
+                            <th style="width:">ID</th>
+                            <th style="width:">Name</th>
+                            <th style="width:">Salary</th>
                             
-                            <th style="width:200px">Actions</th>
+                            <th style="width:">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -87,14 +86,14 @@
                                 <td class="text-nowrap" style="width:200px">
                                     <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
                                         data-bs-target="#editPositionModal{{ $position->id }}">
-                                        <i class="bi bi-pencil"></i> Edit
+                                        <i class="bi bi-pencil"></i> 
                                     </button>
                                     <form action="{{ route('positions.destroy', $position->id) }}" method="POST"
                                         class="d-inline" onsubmit="return confirm('Are you sure you want to delete this position?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-danger">
-                                            <i class="bi bi-trash"></i> Delete
+                                            <i class="bi bi-trash"></i> 
                                         </button>
                                     </form>
                                 </td>

@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
 
-<body class="default-padding theme1">
+<body class="default-padding theme1" style="background-color: 	#f8f9fa">
     <div class="container-fluid">
         <!-- Search and Add Row -->
         <div class="row mt-2 align-items-end">
@@ -17,7 +17,6 @@
                 <form action="{{ route('contributiontypes.index') }}" method="GET" class="row g-3 align-items-end">
                     <!-- Search -->
                     <div class="col-auto">
-                        <label for="search" class="form-label">Search Contribution Type:</label>
                         <div class="input-group">
                             <input type="text" class="form-control" id="search" name="search" 
                                    value="{{ request('search') }}" placeholder="Contribution type name...">
@@ -52,9 +51,9 @@
             <table class="table table-striped table-hover table-bordered">
                 <thead>
                     <tr>
-                        <th style="width:80px">ID</th>
-                        <th style="width:200px">Name</th>
-                        <th style="width:200px">Actions</th>
+                        <th style="">ID</th>
+                        <th style="">Name</th>
+                        <th style="">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -65,14 +64,14 @@
                             <td>
                                 <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
                                     data-bs-target="#editContributionTypeModal{{ $type->id }}">
-                                    <i class="bi bi-pencil"></i> Edit
+                                    <i class="bi bi-pencil"></i>
                                 </button>
                                 <form action="{{ route('contributiontypes.destroy', $type->id) }}" method="POST"
                                     class="d-inline" onsubmit="return confirm('Are you sure you want to delete this contribution type?');">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-sm btn-danger">
-                                        <i class="bi bi-trash"></i> Delete
+                                        <i class="bi bi-trash"></i>
                                     </button>
                                 </form>
                             </td>

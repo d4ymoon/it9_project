@@ -1,6 +1,17 @@
-@extends('layouts.app')
+<!doctype html>
+<html lang="en">
 
-@section('content')
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Shifts</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="default-padding theme1" style="background-color: 	#f8f9fa">
 <div class="container-fluid">
     <!-- Header Section -->
     <div class="row align-items-center my-4">
@@ -10,16 +21,12 @@
                 Payroll Reports
             </h2>
         </div>
-        <div class="col-auto">
-            <a href="{{ route('payslips.index') }}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Back to Payslips
-            </a>
-        </div>
+       
     </div>
 
     <!-- Filter Section -->
-    <div class="card mb-4">
-        <div class="card-body filter-form">
+    <div class="card mb-4" >
+        <div class="card-body filter-form" >
             <form action="" method="GET" class="row g-3 align-items-end">
                 <div class="col-md-2">
                     <label class="form-label">Month</label>
@@ -66,7 +73,7 @@
     <!-- Summary Cards -->
     <div class="row mb-4">
         <div class="col-md-3">
-            <div class="card bg-primary text-white">
+            <div class="card text-white" style="background-color:#4a90e2">
                 <div class="card-body">
                     <h6 class="card-title">Total Reports</h6>
                     <h3 class="mb-0">{{ $payrollReports->count() }}</h3>
@@ -74,7 +81,7 @@
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-success text-white">
+            <div class="card bg-success text-white" >
                 <div class="card-body">
                     <h6 class="card-title">Total Employees</h6>
                     <h3 class="mb-0">{{ $payrollReports->sum('total_employees') }}</h3>
@@ -83,22 +90,22 @@
         </div>
         <div class="col-md-3">
             <div class="card bg-info text-white">
-                <div class="card-body">
-                    <h6 class="card-title">Total Net Pay</h6>
-                    <h3 class="mb-0">₱{{ number_format($payrollReports->sum('total_net_pay'), 2) }}</h3>
-                </div>
+                <div class="card-body text-end">
+    <h6 class="card-title">Total Net Pay</h6>
+    <h3 class="mb-0">₱{{ number_format($payrollReports->sum('total_net_pay'), 2) }}</h3>
+</div>
             </div>
         </div>
     </div>
 
     <!-- Reports Table -->
     <div class="card">
-        <div class="card-header bg-white py-3">
+       <div class="card-header">
             <h5 class="card-title mb-0">Payroll Report Records</h5>
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
+                <table class="table table-hover  table-striped table-bordered">
                     <thead>
                         <tr>
                             <th>Pay Period</th>
@@ -114,17 +121,20 @@
                     <tbody>
                         @foreach ($payrollReports as $report)
                             <tr>
-                                <td>{{ str_replace('_to_', ' to ', $report->pay_period) }}</td>
-                                <td><span class="badge bg-info">{{ str_replace('_', '-', $report->period_type) }}</span></td>
+                                @php
+                                    [$start, $end] = explode('_to_', $report->pay_period);
+                                @endphp
+                                <td>{{ \Carbon\Carbon::parse($start)->format('M d, Y') }} to {{ \Carbon\Carbon::parse($end)->format('M d, Y') }}</td>
+                                <td>{{ \Illuminate\Support\Str::title(str_replace('_', '-', $report->period_type)) }}</td>
                                 <td>{{ $report->total_employees }}</td>
-                                <td>₱{{ number_format($report->total_gross_pay, 2) }}</td>
-                                <td>₱{{ number_format($report->total_deductions, 2) }}</td>
-                                <td>₱{{ number_format($report->total_net_pay, 2) }}</td>
+                                <td class="text-end">₱{{ number_format($report->total_gross_pay, 2) }}</td>
+                                <td class="text-end">₱{{ number_format($report->total_deductions, 2) }}</td>
+                                <td class="text-end">₱{{ number_format($report->total_net_pay, 2) }}</td>
                                 <td>{{ $report->generated_at->format('M d, Y') }}</td>
                                 <td>
                                     <a href="{{ route('payslips.report-details', $report->pay_period) }}" 
                                        class="btn btn-sm btn-info">
-                                        <i class="bi bi-eye"></i> View Details
+                                        <i class="bi bi-eye"></i>
                                     </a>
                                 </td>
                             </tr>
@@ -135,4 +145,9 @@
         </div>
     </div>
 </div>
-@endsection 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous">
+    </script>
+</body>
+
+</html>

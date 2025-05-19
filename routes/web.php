@@ -52,6 +52,9 @@ Route::middleware(['web', 'auth', \App\Http\Middleware\AdminMiddleware::class])-
     Route::patch('payslips/{payslip}/mark-paid', [PayslipController::class, 'markAsPaid'])->name('payslips.mark-paid');
     Route::post('payslips/generate', [PayslipController::class, 'generate'])->name('payslips.generate');
 
+    // Add the mark-all-paid route before resource routes
+    Route::patch('payslips/mark-all', [PayslipController::class, 'markAllAsPaid'])->name('payslips.mark-all-paid');
+
     // Resource routes
     Route::resource('positions', PositionController::class);
     Route::resource('employees', EmployeeController::class);

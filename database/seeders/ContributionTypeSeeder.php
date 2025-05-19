@@ -18,6 +18,10 @@ class ContributionTypeSeeder extends Seeder
                 'name' => 'GSIS',
 
             ],
+            [
+                'name' => 'Pag-IBIG',
+
+            ],
         ];
 
         foreach ($contributionTypes as $type) {

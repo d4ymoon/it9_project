@@ -6,7 +6,13 @@ use Illuminate\Http\Request;
 use App\Models\Attendance;
 use App\Models\Employee;
 use Carbon\Carbon;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+
+
+// Set Manila timezone constant for reuse
+define('MANILA_TZ', 'Asia/Manila');
 
 class AttendanceController extends Controller
 {
@@ -60,115 +66,164 @@ class AttendanceController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
-            'current_time' => 'required',
-        ]);
+        try {
+            // Set current date if not provided
+            if (!$request->filled('date')) {
+                $request->merge(['date' => Carbon::now()->format('Y-m-d')]);
+            }
 
-        $employee = Employee::with('shift')->findOrFail($validated['employee_id']);
+            // Validate request
+            $validated = $request->validate([
+                'employee_id' => 'required|exists:employees,id',
+                'date' => 'required|date',
+                'type' => 'required|in:time_in,time_out,break_out,break_in',
+            ]);
+
+            // Get employee with shift
+            $employee = Employee::with('shift')->findOrFail($validated['employee_id']);
+            $shift = $employee->shift;
+
+            if (!$shift) {
+                return redirect()->back()
+                    ->with('error', 'Employee has no assigned shift.')
+                    ->withInput();
+            }
+
+            // Find or create attendance record
+            $attendance = Attendance::firstOrCreate([
+                'employee_id' => $validated['employee_id'],
+                'date' => $validated['date'],
+            ], [
+                'status' => 'Incomplete'
+            ]);
+
+            // Check if the time entry already exists
+            $timeField = $validated['type'];
+            if ($attendance->$timeField) {
+                return redirect()->back()
+                    ->with('error', ucfirst(str_replace('_', ' ', $timeField)) . ' already recorded for today.')
+                    ->withInput();
+            }
+
+            // Check for proper sequence
+            switch ($timeField) {
+                case 'time_in':
+                    // No prerequisites for time in
+                    break;
+                case 'break_out':
+                    if (!$attendance->time_in) {
+                        return redirect()->back()
+                            ->with('error', 'You must time in before taking a break.')
+                            ->withInput();
+                    }
+                    break;
+                case 'break_in':
+                    if (!$attendance->break_out) {
+                        return redirect()->back()
+                            ->with('error', 'You must break out before breaking in.')
+                            ->withInput();
+                    }
+                    break;
+                case 'time_out':
+                    if (!$attendance->time_in) {
+                        return redirect()->back()
+                            ->with('error', 'You must time in before timing out.')
+                            ->withInput();
+                    }
+                    if ($attendance->break_out && !$attendance->break_in) {
+                        return redirect()->back()
+                            ->with('error', 'You must break in before timing out.')
+                            ->withInput();
+                    }
+                    break;
+            }
+
+            // Set the appropriate time field based on type
+            $now = Carbon::now();
+            $attendance->$timeField = $now;
+
+            // Update status based on attendance state
+            if ($attendance->time_out) {
+                $attendance->status = 'Present';
+            } else {
+                $attendance->status = 'Incomplete';
+            }
+
+            // Calculate hours
+            $this->calculateHours($attendance);
+
+            return redirect()->back()->with('success', $this->getSuccessMessage($attendance));
+        } catch (\Exception $e) {
+            Log::error('Error saving attendance: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            return redirect()->back()
+                ->with('error', 'An error occurred while saving the attendance record: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    private function calculateHours(Attendance $attendance)
+    {
+        if (!$attendance->time_in || !$attendance->time_out) {
+            $attendance->total_hours = 0;
+            $attendance->regular_hours = 0;
+            $attendance->overtime_hours = 0;
+            $attendance->save();
+            return;
+        }
+
+        $timeIn = Carbon::parse($attendance->time_in);
+        $timeOut = Carbon::parse($attendance->time_out);
         
-        if (!$employee->shift) {
-            return redirect()->back()->with('error', 'No shift assigned to this employee.');
+        // Get employee's shift
+        $shift = $attendance->employee->shift;
+        if (!$shift) {
+            return;
         }
 
-        $now = Carbon::createFromFormat('H:i:s', $validated['current_time']);
-        $today = Carbon::today();
-        $date = $today->format('Y-m-d');
-
-        // Get shift times for today
-        $shiftStart = Carbon::parse($date . ' ' . $employee->shift->start_time);
-        $breakStart = Carbon::parse($date . ' ' . $employee->shift->break_start_time);
-        $breakEnd = Carbon::parse($date . ' ' . $employee->shift->break_end_time);
-        $shiftEnd = Carbon::parse($date . ' ' . $employee->shift->end_time);
-
-        // Handle shifts that might end after midnight
-        if ($shiftEnd->lt($shiftStart)) {
-            $shiftEnd->addDay();
+        $shiftStart = Carbon::parse($attendance->date . ' ' . $shift->start_time);
+        $shiftEnd = Carbon::parse($attendance->date . ' ' . $shift->end_time);
+        
+        // Calculate total minutes worked
+        $totalWorkedMinutes = $timeIn->diffInMinutes($timeOut);
+        
+        // Subtract break time if exists
+        if ($attendance->break_out && $attendance->break_in) {
+            $breakOut = Carbon::parse($attendance->break_out);
+            $breakIn = Carbon::parse($attendance->break_in);
+            $breakMinutes = $breakOut->diffInMinutes($breakIn);
+            $totalWorkedMinutes -= $breakMinutes;
         }
 
-        $nextShiftStart = $shiftStart->copy()->addDay();
+        // Calculate regular and overtime hours
+        $regularMinutes = 0;
+        $overtimeMinutes = 0;
 
-        // Get today's attendance record
-        $attendance = Attendance::where('employee_id', $validated['employee_id'])
-            ->whereDate('date', $date)
-            ->first();
-
-        if (!$attendance) {
-            // First login attempt of the day
-            if ($now->between($breakStart, $shiftEnd)) {
-                // Logged in during second half
-                $attendance = new Attendance([
-                    'employee_id' => $validated['employee_id'],
-                    'date' => $date,
-                    'break_in' => $now,
-                    'status' => 'Half Day'  // Will be marked as Absent if no logout
-                ]);
-                $attendance->save();
-                return redirect()->back()->with('success', 'Logged in for second half of shift.');
-            } elseif ($now->lt($breakStart)) {
-                // Logged in during first half
-                $attendance = new Attendance([
-                    'employee_id' => $validated['employee_id'],
-                    'date' => $date,
-                    'time_in' => $now,
-                    'status' => 'Present'  // Will be marked as Absent if no complete sequence
-                ]);
-                $attendance->save();
-                return redirect()->back()->with('success', 'Logged in for first half of shift.');
-            } else {
-                // Trying to login after shift ends without prior login
-                return redirect()->back()->with('error', 'Cannot start attendance after shift hours.');
-            }
-        }
-
-        // Handle existing attendance record
-        if ($attendance->time_in && !$attendance->break_out) {
-            // First half logout (break start)
-            $attendance->break_out = $now;
-            $attendance->status = 'Partial';  // Marked as Partial if they don't complete the sequence
-            $attendance->save();
-            return redirect()->back()->with('success', 'Break time started.');
-        }
-
-        if ($attendance->break_out && !$attendance->break_in) {
-            // Second half login (break end)
-            $attendance->break_in = $now;
-            $attendance->status = 'Partial';  // Will be marked as Absent if no logout
-            $attendance->save();
-            return redirect()->back()->with('success', 'Break ended, second half started.');
-        }
-
-        if ($attendance->break_in && !$attendance->time_out) {
-            // Final logout - Complete attendance sequence
-            $attendance->time_out = $now;
-
-            // Calculate total hours worked
-            $totalHours = 0;
-            if ($attendance->time_in && $attendance->break_out) {
-                $firstHalf = Carbon::parse($attendance->break_out)->diffInMinutes(Carbon::parse($attendance->time_in));
-                $totalHours += $firstHalf / 60;
-            }
-            if ($attendance->break_in && $attendance->time_out) {
-                $secondHalf = Carbon::parse($attendance->time_out)->diffInMinutes(Carbon::parse($attendance->break_in));
-                $totalHours += $secondHalf / 60;
-            }
-
-            // Only mark as Present if complete sequence and sufficient hours
-            if ($attendance->time_in && $attendance->break_out && $attendance->break_in && $attendance->time_out) {
-                if ($totalHours >= 8) {
-                    $attendance->status = 'Present';
-                } else {
-                    $attendance->status = 'Partial';
+        // If worked within shift hours
+        if ($timeIn <= $shiftEnd && $timeOut >= $shiftStart) {
+            $regularStart = max($timeIn, $shiftStart);
+            $regularEnd = min($timeOut, $shiftEnd);
+            $regularMinutes = $regularStart->diffInMinutes($regularEnd);
+            
+            // Subtract break time from regular hours if break is during shift
+            if ($attendance->break_out && $attendance->break_in) {
+                $breakOut = Carbon::parse($attendance->break_out);
+                $breakIn = Carbon::parse($attendance->break_in);
+                if ($breakOut >= $shiftStart && $breakIn <= $shiftEnd) {
+                    $breakMinutes = $breakOut->diffInMinutes($breakIn);
+                    $regularMinutes -= $breakMinutes;
                 }
-            } else {
-                $attendance->status = 'Absent';
             }
-
-            $attendance->save();
-            return redirect()->back()->with('success', 'Shift completed. Time out recorded.');
         }
 
-        return redirect()->back()->with('error', 'Invalid attendance action. Please check your attendance sequence.');
+        // Calculate overtime
+        $overtimeMinutes = $totalWorkedMinutes - $regularMinutes;
+
+        // Update attendance record with correct column names
+        $attendance->total_hours = round($totalWorkedMinutes / 60, 2);
+        $attendance->regular_hours = round($regularMinutes / 60, 2);
+        $attendance->overtime_hours = round($overtimeMinutes / 60, 2);
+        $attendance->save();
     }
 
     /**
@@ -176,16 +231,11 @@ class AttendanceController extends Controller
      */
     private function getSuccessMessage($attendance)
     {
-        if ($attendance->time_in && !$attendance->break_out) {
-            return 'First half attendance started.';
-        } elseif ($attendance->time_in && $attendance->break_out && !$attendance->break_in) {
-            return 'First half completed. Break started.';
-        } elseif ($attendance->break_in && !$attendance->time_out) {
-            return 'Second half attendance started.';
-        } elseif ($attendance->time_out) {
+        if ($attendance->time_out) {
             return 'Attendance completed for the day.';
+        } else {
+            return 'Attendance logged successfully.';
         }
-        return 'Attendance logged successfully.';
     }
 
     /**

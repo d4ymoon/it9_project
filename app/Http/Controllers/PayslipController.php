@@ -15,6 +15,7 @@ use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class PayslipController extends Controller
 {
@@ -134,13 +135,18 @@ class PayslipController extends Controller
         // Get all active employees
         $employees = Employee::where('status', 'active')->get();
 
-        // Check if any payslips exist for this period
-        $existingPayslips = Payslip::where('pay_period', $payPeriod)->exists();
-        if ($existingPayslips) {
-            return redirect()->back()->with('error', 'Payslip records already exist for this period.');
-        }
+        // Use database transaction to prevent race conditions
+        try {
+            DB::beginTransaction();
 
-        foreach ($employees as $employee) {
+            // Check if any payslips exist for this period
+            $existingPayslips = Payslip::where('pay_period', $payPeriod)->exists();
+            if ($existingPayslips) {
+                DB::rollBack();
+                return redirect()->back()->with('error', 'Payslip records already exist for this period.');
+            }
+
+            foreach ($employees as $employee) {
             $monthlySalary = $employee->position->salary;
             $semiMonthlySalary = $monthlySalary / 2;
 
@@ -161,71 +167,52 @@ class PayslipController extends Controller
 
             // Process attendance records
             $attendanceRecords = Attendance::where('employee_id', $employee->id)
-                ->whereBetween('date', [str_replace('_to_', '', explode('_', $payPeriod)[0]), str_replace('_to_', '', explode('_', $payPeriod)[2])])
+                ->whereBetween('date', [
+                    str_replace('_to_', '', explode('_', $payPeriod)[0]),
+                    str_replace('_to_', '', explode('_', $payPeriod)[2])
+                ])
                 ->where(function($query) {
-                    $query->where('status', '!=', 'Absent')
-                          ->orWhere('status', 'Leave');
+                    $query->where('status', 'Present')
+                        ->orWhere('status', 'Leave');
                 })
                 ->get();
 
             foreach ($attendanceRecords as $record) {
                 if ($record->status === 'Leave') {
+                    // Count full 8 hours for leave
                     $totalRegularHours += 8;
                     continue;
                 }
 
-                if (!$record->time_in || !$record->time_out) {
-                    continue;
-                }
-
                 $isWeekend = Carbon::parse($record->date)->isWeekend();
-                
-                // Calculate worked hours
-                $timeIn = Carbon::parse($record->time_in);
-                $timeOut = Carbon::parse($record->time_out);
-                $breakOut = $record->break_out ? Carbon::parse($record->break_out) : null;
-                $breakIn = $record->break_in ? Carbon::parse($record->break_in) : null;
 
-                $workedMinutes = 0;
-
-                if ($timeIn && $breakOut) {
-                    $workedMinutes += $timeIn->diffInMinutes($breakOut);
-                }
-
-                if ($breakIn && $timeOut) {
-                    $workedMinutes += $breakIn->diffInMinutes($timeOut);
-                }
-
-                $workedHours = $workedMinutes / 60;
+                // Use the correct column names from attendance table
+                $recordRegularHours = $record->regular_hours ?? 0;
+                $recordOvertimeHours = $record->overtime_hours ?? 0;
+                $recordTotalHours = $record->total_hours ?? 0;
 
                 if ($isWeekend) {
-                    if ($workedHours > 2) {
-                        $totalWeekendHours += $workedHours;
-                    }
+                    $totalWeekendHours += $recordTotalHours;
                 } else {
-                    if ($workedHours > 8) {
-                        $overtimeHours = $workedHours - 8;
-                        if ($overtimeHours > 2) {
-                            $totalWeekdayOvertimeHours += $overtimeHours;
-                        }
-                        $totalRegularHours += 8;
-                    } else {
-                        $totalRegularHours += $workedHours;
+                    $totalRegularHours += $recordRegularHours;
+                    // Only count overtime if it exceeds 2 hours per day
+                    if ($recordOvertimeHours > 2) {
+                        $totalWeekdayOvertimeHours += $recordOvertimeHours;
                     }
                 }
             }
 
-            // Calculate basic pay
-            $basicPay = $totalRegularHours * $hourlyRate;
-            if ($request->period_type === 'semi_monthly') {
-                $basicPay = min($basicPay, $semiMonthlySalary);
-            } else {
-                $basicPay = min($basicPay, $monthlySalary);
-            }
+            // Calculate basic pay based on regular hours
+            $basicPay = $hourlyRate * $totalRegularHours;
 
             // Calculate overtime pay
-            $overtimePay = ($totalWeekdayOvertimeHours * $hourlyRate * 1.25) + 
-                          ($totalWeekendHours * $hourlyRate * 1.5);
+            $overtimePay = 0;
+            if ($totalWeekdayOvertimeHours > 0) {
+                $overtimePay += $hourlyRate * 1.25 * $totalWeekdayOvertimeHours; // 25% premium for weekday overtime
+            }
+            if ($totalWeekendHours > 0) {
+                $overtimePay += $hourlyRate * 1.30 * $totalWeekendHours; // 30% premium for weekend work
+            }
 
             // Process deductions
             $totalDeductions = 0;
@@ -271,188 +258,195 @@ class PayslipController extends Controller
             ]);
         }
 
+        DB::commit();
         return redirect()->route('payslips.index')->with('success', 'Payslips generated successfully.');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Error generating payslips: ' . $e->getMessage());
+        return redirect()->back()->with('error', 'An error occurred while generating payslips. Please try again.');
+    }
+}
+
+public function generatePDF(Payslip $payslip)
+{
+    $employee = $payslip->employee;
+    $pdf = PDF::loadView('payslips.pdf', compact('payslip', 'employee'));
+    return $pdf->download('payslip_' . $employee->id . '_' . $payslip->pay_period . '.pdf');
+}
+
+public function markAsPaid(Payslip $payslip)
+{
+    $payslip->update(['payment_status' => 'paid']);
+    return redirect()->back()->with('success', 'Payslip marked as paid successfully.');
+}
+
+public function markAllAsPaid(Request $request)
+{
+    $query = Payslip::where('payment_status', 'pending');
+    
+    // If month filter is applied
+    if ($request->filled('month')) {
+        $date = Carbon::parse($request->month . '-01');
+        $query->where('pay_period', 'like', $date->format('Y-m') . '%');
+    }
+    
+    $count = $query->update(['payment_status' => 'paid']);
+    
+    return redirect()->back()->with('success', $count . ' payslips marked as paid successfully.');
+}
+
+public function reports(Request $request)
+{
+    $query = Payslip::selectRaw('
+        pay_period,
+        period_type,
+        COUNT(DISTINCT employee_id) as total_employees,
+        SUM(basic_pay + overtime_pay) as total_gross_pay,
+        SUM(total_deductions) as total_deductions,
+        SUM(net_salary) as total_net_pay,
+        MIN(created_at) as generated_at
+    ');
+
+    // Apply filters
+    if ($request->filled('month') && $request->filled('year')) {
+        $month = str_pad($request->month, 2, '0', STR_PAD_LEFT);
+        $year = $request->year;
+        $query->where('pay_period', 'like', "{$year}-{$month}%");
+    } elseif ($request->filled('month')) {
+        $month = str_pad($request->month, 2, '0', STR_PAD_LEFT);
+        $query->where('pay_period', 'like', "%-{$month}%");
+    } elseif ($request->filled('year')) {
+        $query->where('pay_period', 'like', "{$request->year}%");
     }
 
-    public function generatePDF(Payslip $payslip)
-    {
-        $employee = $payslip->employee;
-        $pdf = PDF::loadView('payslips.pdf', compact('payslip', 'employee'));
-        return $pdf->download('payslip_' . $employee->id . '_' . $payslip->pay_period . '.pdf');
+    if ($request->filled('period_type')) {
+        $query->where('period_type', $request->period_type);
     }
 
-    public function markAsPaid(Payslip $payslip)
-    {
-        $payslip->update(['payment_status' => 'paid']);
-        return redirect()->back()->with('success', 'Payslip marked as paid successfully.');
-    }
-
-    public function markAllAsPaid(Request $request)
-    {
-        $query = Payslip::where('payment_status', 'pending');
-        
-        // If month filter is applied
-        if ($request->filled('month')) {
-            $date = Carbon::parse($request->month . '-01');
-            $query->where('pay_period', 'like', $date->format('Y-m') . '%');
-        }
-        
-        $count = $query->update(['payment_status' => 'paid']);
-        
-        return redirect()->back()->with('success', $count . ' payslips marked as paid successfully.');
-    }
-
-    public function reports(Request $request)
-    {
-        $query = Payslip::selectRaw('
-            pay_period,
-            period_type,
-            COUNT(DISTINCT employee_id) as total_employees,
-            SUM(basic_pay + overtime_pay) as total_gross_pay,
-            SUM(total_deductions) as total_deductions,
-            SUM(net_salary) as total_net_pay,
-            MIN(created_at) as generated_at
-        ');
-
-        // Apply filters
-        if ($request->filled('month') && $request->filled('year')) {
-            $month = str_pad($request->month, 2, '0', STR_PAD_LEFT);
-            $year = $request->year;
-            $query->where('pay_period', 'like', "{$year}-{$month}%");
-        } elseif ($request->filled('month')) {
-            $month = str_pad($request->month, 2, '0', STR_PAD_LEFT);
-            $query->where('pay_period', 'like', "%-{$month}%");
-        } elseif ($request->filled('year')) {
-            $query->where('pay_period', 'like', "{$request->year}%");
-        }
-
-        if ($request->filled('period_type')) {
-            $query->where('period_type', $request->period_type);
-        }
-
-        $payrollReports = $query->groupBy('pay_period', 'period_type')
-            ->orderBy('generated_at', 'desc')
-            ->get()
-            ->map(function($report) {
-                $report->generated_at = Carbon::parse($report->generated_at);
-                return $report;
-            });
-
-        return view('payslips.reports', compact('payrollReports'));
-    }
-
-    public function reportDetails($payPeriod)
-    {
-        $payslips = Payslip::where('pay_period', $payPeriod)->with('employee')->get();
-        
-        // Calculate summary statistics
-        $summary = [
-            'period' => str_replace('_to_', ' to ', $payPeriod),
-            'period_type' => $payslips->first()->period_type,
-            'total_employees' => $payslips->count(),
-            'total_gross_pay' => $payslips->sum(function($payslip) {
-                return $payslip->basic_pay + $payslip->overtime_pay;
-            }),
-            'total_deductions' => $payslips->sum('total_deductions'),
-            'total_net_pay' => $payslips->sum('net_salary'),
-            'total_basic_pay' => $payslips->sum('basic_pay'),
-            'total_overtime_pay' => $payslips->sum('overtime_pay'),
-            'generated_at' => $payslips->first()->created_at
-        ];
-
-        return view('payslips.report-details', compact('payslips', 'summary'));
-    }
-
-    public function payrolls()
-    {
-        // Group payslips by pay period and get summary data
-        $payrolls = Payslip::selectRaw('
-            pay_period,
-            period_type,
-            COUNT(DISTINCT employee_id) as total_employees,
-            SUM(basic_pay + overtime_pay) as total_gross_pay,
-            SUM(total_deductions) as total_deductions,
-            SUM(net_salary) as total_net_pay,
-            MIN(created_at) as generated_at,
-            COUNT(CASE WHEN payment_status = "paid" THEN 1 END) as paid_count,
-            COUNT(*) as total_count
-        ')
-        ->groupBy('pay_period', 'period_type')
+    $payrollReports = $query->groupBy('pay_period', 'period_type')
         ->orderBy('generated_at', 'desc')
         ->get()
-        ->map(function($payroll) {
-            $payroll->generated_at = Carbon::parse($payroll->generated_at);
-            return $payroll;
+        ->map(function($report) {
+            $report->generated_at = Carbon::parse($report->generated_at);
+            return $report;
         });
 
-        return view('payslips.payrolls', compact('payrolls'));
-    }
+    return view('payslips.reports', compact('payrollReports'));
+}
 
-    public function payrollDetails($payPeriod)
-    {
-        $payslips = Payslip::where('pay_period', $payPeriod)->with('employee')->get();
+public function reportDetails($payPeriod)
+{
+    $payslips = Payslip::where('pay_period', $payPeriod)->with('employee')->get();
+    
+    // Calculate summary statistics
+    $summary = [
+        'period' => str_replace('_to_', ' to ', $payPeriod),
+        'period_type' => $payslips->first()->period_type,
+        'total_employees' => $payslips->count(),
+        'total_gross_pay' => $payslips->sum(function($payslip) {
+            return $payslip->basic_pay + $payslip->overtime_pay;
+        }),
+        'total_deductions' => $payslips->sum('total_deductions'),
+        'total_net_pay' => $payslips->sum('net_salary'),
+        'total_basic_pay' => $payslips->sum('basic_pay'),
+        'total_overtime_pay' => $payslips->sum('overtime_pay'),
+        'generated_at' => $payslips->first()->created_at
+    ];
+
+    return view('payslips.report-details', compact('payslips', 'summary'));
+}
+
+public function payrolls()
+{
+    // Group payslips by pay period and get summary data
+    $payrolls = Payslip::selectRaw('
+        pay_period,
+        period_type,
+        COUNT(DISTINCT employee_id) as total_employees,
+        SUM(basic_pay + overtime_pay) as total_gross_pay,
+        SUM(total_deductions) as total_deductions,
+        SUM(net_salary) as total_net_pay,
+        MIN(created_at) as generated_at,
+        COUNT(CASE WHEN payment_status = "paid" THEN 1 END) as paid_count,
+        COUNT(*) as total_count
+    ')
+    ->groupBy('pay_period', 'period_type')
+    ->orderBy('generated_at', 'desc')
+    ->get()
+    ->map(function($payroll) {
+        $payroll->generated_at = Carbon::parse($payroll->generated_at);
+        return $payroll;
+    });
+
+    return view('payslips.payrolls', compact('payrolls'));
+}
+
+public function payrollDetails($payPeriod)
+{
+    $payslips = Payslip::where('pay_period', $payPeriod)->with('employee')->get();
+    
+    // Calculate summary statistics
+    $summary = [
+        'period' => str_replace('_to_', ' to ', $payPeriod),
+        'period_type' => $payslips->first()->period_type,
+        'total_employees' => $payslips->count(),
+        'total_gross_pay' => $payslips->sum(function($payslip) {
+            return $payslip->basic_pay + $payslip->overtime_pay;
+        }),
+        'total_deductions' => $payslips->sum('total_deductions'),
+        'total_net_pay' => $payslips->sum('net_salary'),
+        'total_basic_pay' => $payslips->sum('basic_pay'),
+        'total_overtime_pay' => $payslips->sum('overtime_pay'),
+        'paid_count' => $payslips->where('payment_status', 'paid')->count(),
+        'pending_count' => $payslips->where('payment_status', 'pending')->count(),
+        'generated_at' => $payslips->first()->created_at
+    ];
+
+    return view('payslips.payroll-details', compact('payslips', 'summary'));
+}
+
+public function employeePayslips()
+{
+    $employee = Auth::user()->employee;
+    $payslips = Payslip::where('employee_id', $employee->id)
+        ->orderBy('pay_period', 'desc')
+        ->paginate(10);
+
+    return view('employee.payslips.index', compact('payslips'));
+}
+
+private function calculateLoanDeductions($employee, $salary)
+{
+    $totalLoanDeductions = 0;
+    $loanDetails = [];
+
+    $activeLoans = $employee->loans()
+        ->where('status', 'active')
+        ->get();
+
+    foreach ($activeLoans as $loan) {
+        $monthlyInterest = $loan->calculateMonthlyInterest();
+        $monthlyDeduction = $loan->calculateMonthlyDeduction($salary);
         
-        // Calculate summary statistics
-        $summary = [
-            'period' => str_replace('_to_', ' to ', $payPeriod),
-            'period_type' => $payslips->first()->period_type,
-            'total_employees' => $payslips->count(),
-            'total_gross_pay' => $payslips->sum(function($payslip) {
-                return $payslip->basic_pay + $payslip->overtime_pay;
-            }),
-            'total_deductions' => $payslips->sum('total_deductions'),
-            'total_net_pay' => $payslips->sum('net_salary'),
-            'total_basic_pay' => $payslips->sum('basic_pay'),
-            'total_overtime_pay' => $payslips->sum('overtime_pay'),
-            'paid_count' => $payslips->where('payment_status', 'paid')->count(),
-            'pending_count' => $payslips->where('payment_status', 'pending')->count(),
-            'generated_at' => $payslips->first()->created_at
-        ];
-
-        return view('payslips.payroll-details', compact('payslips', 'summary'));
-    }
-
-    public function employeePayslips()
-    {
-        $employee = Auth::user()->employee;
-        $payslips = Payslip::where('employee_id', $employee->id)
-            ->orderBy('pay_period', 'desc')
-            ->paginate(10);
-
-        return view('employee.payslips.index', compact('payslips'));
-    }
-
-    private function calculateLoanDeductions($employee, $salary)
-    {
-        $totalLoanDeductions = 0;
-        $loanDetails = [];
-
-        $activeLoans = $employee->loans()
-            ->where('status', 'active')
-            ->get();
-
-        foreach ($activeLoans as $loan) {
-            $monthlyInterest = $loan->calculateMonthlyInterest();
-            $monthlyDeduction = $loan->calculateMonthlyDeduction($salary);
+        if ($monthlyDeduction > 0) {
+            $loanDetails[] = [
+                'type' => $loan->loan_type,
+                'amount' => $monthlyDeduction,
+                'interest' => $monthlyInterest,
+                'total' => $monthlyDeduction + $monthlyInterest
+            ];
             
-            if ($monthlyDeduction > 0) {
-                $loanDetails[] = [
-                    'type' => $loan->loan_type,
-                    'amount' => $monthlyDeduction,
-                    'interest' => $monthlyInterest,
-                    'total' => $monthlyDeduction + $monthlyInterest
-                ];
-                
-                $totalLoanDeductions += $monthlyDeduction + $monthlyInterest;
-                
-                // Process the loan payment
-                $loan->processMonthlyPayment($salary);
-            }
+            $totalLoanDeductions += $monthlyDeduction + $monthlyInterest;
+            
+            // Process the loan payment
+            $loan->processMonthlyPayment($salary);
         }
-
-        return [
-            'total' => $totalLoanDeductions,
-            'details' => $loanDetails
-        ];
     }
+
+    return [
+        'total' => $totalLoanDeductions,
+        'details' => $loanDetails
+    ];
+}
 }

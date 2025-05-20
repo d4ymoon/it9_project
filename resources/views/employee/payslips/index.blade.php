@@ -39,10 +39,10 @@
                             <td>₱{{ number_format($payslip->net_pay, 2) }}</td>
                             <td>
                                 <a href="{{ route('employee.payslips.show', $payslip->id) }}" class="btn btn-sm btn-primary">
-                                    View Details
+                                    <i class="bi bi-eye"></i>
                                 </a>
                                 <a href="{{ route('payslips.download', $payslip->id) }}" class="btn btn-sm btn-secondary">
-                                    Download PDF
+                                    <i class="bi bi-file-pdf"></i> PDF
                                 </a>
                             </td>
                         </tr>

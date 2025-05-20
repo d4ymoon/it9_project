@@ -21,6 +21,10 @@ return new class extends Migration
             $table->dateTime('break_in')->nullable();     // End of break (optional)
             $table->dateTime('time_out')->nullable();     // End of working time
 
+            $table->decimal('total_hours', 5, 2)->nullable();       // Total hours worked
+            $table->decimal('regular_hours', 5, 2)->nullable();     // Regular shift hours
+            $table->decimal('overtime_hours', 5, 2)->nullable();    // Overtime hours
+
             $table->string('status')->nullable();       
             $table->unique(['employee_id', 'date']);   // One record per day per employee
             $table->timestamps();

@@ -163,7 +163,7 @@ class EmployeeAndAttendanceSeeder extends Seeder
                 }
 
                 // Create attendance record
-                Attendance::create([
+                $attendance = Attendance::create([
                     'employee_id' => $employee->id,
                     'date' => $date->format('Y-m-d'),
                     'time_in' => $timeIn,
@@ -172,6 +172,33 @@ class EmployeeAndAttendanceSeeder extends Seeder
                     'time_out' => $timeOut,
                     'status' => $status
                 ]);
+
+                // Calculate hours
+                if ($timeIn && $timeOut) {
+                    $totalHours = 0;
+                    $regularHours = 0;
+                    $overtimeHours = 0;
+
+                    // Calculate total hours worked
+                    $totalHours = Carbon::parse($timeIn)->diffInMinutes(Carbon::parse($timeOut)) / 60;
+                    
+                    // Subtract break time if break was taken
+                    if ($breakOut && $breakIn) {
+                        $breakDuration = Carbon::parse($breakOut)->diffInMinutes(Carbon::parse($breakIn)) / 60;
+                        $totalHours -= $breakDuration;
+                    }
+
+                    // Calculate regular and overtime hours
+                    $regularHours = min($totalHours, 8); // Standard 8-hour workday
+                    $overtimeHours = max(0, $totalHours - 8);
+
+                    // Update attendance record with calculated hours
+                    $attendance->update([
+                        'total_hours' => round($totalHours, 2),
+                        'regular_hours' => round($regularHours, 2),
+                        'overtime_hours' => round($overtimeHours, 2)
+                    ]);
+                }
             }
         }
     }

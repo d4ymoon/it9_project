@@ -67,6 +67,7 @@
             </div>
         </div>
     </div>
+     <a href="{{ route('employee.attendance.create') }}" class="btn btn-primary">Record Attendance</a>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

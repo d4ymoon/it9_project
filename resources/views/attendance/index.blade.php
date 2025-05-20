@@ -78,6 +78,9 @@
                             <th>Break Time In</th>
                             <th>Time Out</th>
                             <th>Status</th>
+                            <th>Total Hours</th>
+                            <th>Regular Hours</th>
+                            <th>Overtime Hours</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -92,6 +95,9 @@
                                 <td>{{ $attendance->break_in ? Carbon\Carbon::parse($attendance->break_in)->format('h:i A') : '-' }}</td>
                                 <td>{{ $attendance->time_out ? Carbon\Carbon::parse($attendance->time_out)->format('h:i A') : '-' }}</td>
                                 <td>{{ $attendance->status }}</td>
+                                <td>{{ number_format($attendance->total_hours, 2) }}</td>
+                                <td>{{ number_format($attendance->total_regular_hours, 2) }}</td>
+                                <td>{{ number_format($attendance->total_overtime_hours, 2) }}</td>
                                 <td class="text-nowrap">
                                     <!-- Edit Button -->
                                     <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editAttendanceModal{{ $attendance->id }}">

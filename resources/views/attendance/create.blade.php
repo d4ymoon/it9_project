@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Attendance Tracker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         @font-face {
             font-family: 'Digital7';
@@ -46,13 +47,12 @@
         }
     </style>
 </head>
-<body style="background-color: 	#f8f9fa">
-    <div class="container mt-5" >
+<body style="background-color: #f8f9fa">
+    <div class="container mt-5">
         <h2 class="text-center mb-4">Employee Attendance Tracker</h2>   
         <div class="container mt-5" style="width: 500px;">
             <div id="clock" class="text-center"></div>
             <div id="date" class="text-center mb-1"></div>
-            <div id="shift-display" class="text-center"></div>
             <div id="attendance-phase" class="text-center attendance-info"></div>
 
             @error('employee_id')
@@ -68,10 +68,15 @@
             @endif
         </div>
        
-        <form method="POST" action="{{ route('attendances.store') }}" style="width: 400px;" class="mx-auto mt-3 h2">
+        <form method="POST" action="{{ route('attendances.store') }}" style="width: 500px;" class="mx-auto mt-3">
             @csrf
-            <input type="hidden" id="current_time" name="current_time" value="">
-            <input type="hidden" id="shift" name="shift" value="">
+            <input type="hidden" name="date" id="current_date" value="{{ now()->format('Y-m-d') }}">
+            <input type="hidden" name="time_in" id="time_in">
+            <input type="hidden" name="break_out" id="break_out">
+            <input type="hidden" name="break_in" id="break_in">
+            <input type="hidden" name="time_out" id="time_out">
+            <input type="hidden" name="type" id="attendance_type">
+
             <div class="mb-3">
                 <label for="employee_id" class="form-label h5">Employee ID:</label>
                 <input type="number" class="form-control" id="employee_id" name="employee_id" required placeholder="Enter your ID" min="1" value="{{ old('employee_id') }}">
@@ -79,49 +84,43 @@
                     <div class="text-danger">{{ $message }}</div>
                 @enderror
             </div>
-            <button type="submit" class="btn btn-primary w-100">Log Attendance</button>
+
+            <div class="row text-center g-2">
+                <div class="col-3">
+                    <button type="button" class="btn btn-success w-100" onclick="setAttendanceType('time_in')" id="time_in_btn">
+                        <i class="bi bi-box-arrow-in-right"></i><br>Time In
+                    </button>
+                </div>
+                <div class="col-3">
+                    <button type="button" class="btn btn-warning w-100" onclick="setAttendanceType('break_out')" id="break_out_btn">
+                        <i class="bi bi-cup-hot-fill"></i><br>Break Out
+                    </button>
+                </div>
+                <div class="col-3">
+                    <button type="button" class="btn btn-info w-100" onclick="setAttendanceType('break_in')" id="break_in_btn">
+                        <i class="bi bi-arrow-bar-left"></i><br>Break In
+                    </button>
+                </div>
+                <div class="col-3">
+                    <button type="button" class="btn btn-danger w-100" onclick="setAttendanceType('time_out')" id="time_out_btn">
+                        <i class="bi bi-box-arrow-right"></i><br>Time Out
+                    </button>
+                </div>
+            </div>
         </form>
     </div>
 
     <script>
         function updateClock() {
             const now = new Date();
-            const hours = now.getHours();
-            const minutes = now.getMinutes();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
             
-            // Format current time for the hidden input
-            const timeString = now.toLocaleTimeString('en-US', { hour12: false });
-            document.getElementById('current_time').value = timeString;
+            // Update clock display
+            document.getElementById('clock').innerText = `${hours}:${minutes}:${seconds}`;
             
-            // Determine the current phase of attendance
-            let attendancePhase = '';
-            if (hours < 8) {
-                attendancePhase = 'Before Shift (First Half starts at 8:00 AM)';
-            } else if (hours < 12) {
-                attendancePhase = 'First Half of Shift (8:00 AM - 12:00 PM)';
-            } else if (hours === 12) {
-                attendancePhase = 'Break Time (12:00 PM - 1:00 PM)';
-            } else if (hours < 17) {
-                attendancePhase = 'Second Half of Shift (1:00 PM - 5:00 PM)';
-            } else {
-                attendancePhase = 'After Shift Hours (Overtime if logged in during shift)';
-            }
-            document.getElementById('attendance-phase').innerText = attendancePhase;
-            
-            // Determine the current shift
-            let shift;
-            if (hours < 12) {
-                shift = 'first_half';
-            } else {
-                shift = 'second_half';
-            }
-            document.getElementById('shift').value = shift;
-            
-            // Clock display
-            const time = now.toLocaleTimeString();
-            document.getElementById('clock').innerText = time;
-
-            // Date display
+            // Update date display
             const dateString = now.toLocaleDateString('en-US', {
                 weekday: 'long',
                 year: 'numeric',
@@ -131,9 +130,36 @@
             document.getElementById('date').innerText = dateString;
         }
 
+        function setAttendanceType(type) {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { hour12: false });
+            
+            // Set the appropriate time field based on type
+            document.getElementById(type).value = timeString;
+            document.getElementById('attendance_type').value = type;
+            
+            // Disable the button that was just clicked
+            document.getElementById(type + '_btn').disabled = true;
+            
+            // Submit the form
+            document.querySelector('form').submit();
+        }
+
+        // Check if there are any error messages
+        window.onload = function() {
+            const errorDiv = document.querySelector('.alert-danger');
+            if (errorDiv) {
+                // If there's an error, re-enable the button
+                const type = document.getElementById('attendance_type').value;
+                if (type) {
+                    document.getElementById(type + '_btn').disabled = false;
+                }
+            }
+        }
+
         setInterval(updateClock, 1000);
         updateClock(); // Initial call
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js" integrity="sha384-k6d4wzSIapyDyv1kpU366/PK5hCdSbCRGRCMv+eplOQJWyd1fbcAu9OCUj5zNLiq" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

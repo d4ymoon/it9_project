@@ -30,22 +30,28 @@
                             <th>Break In</th>
                             <th>Time Out</th>
                             <th>Status</th>
+                            <th>Total Hours</th>
+                            <th>Regular Hours</th>
+                            <th>Overtime Hours</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($attendances as $attendance)
-                        <tr>
-                            <td>{{ $attendance->date }}</td>
-                            <td>{{ $attendance->time_in ? date('h:i A', strtotime($attendance->time_in)) : '-' }}</td>
-                            <td>{{ $attendance->break_out ? date('h:i A', strtotime($attendance->break_out)) : '-' }}</td>
-                            <td>{{ $attendance->break_in ? date('h:i A', strtotime($attendance->break_in)) : '-' }}</td>
-                            <td>{{ $attendance->time_out ? date('h:i A', strtotime($attendance->time_out)) : '-' }}</td>
-                            <td>
-                                <span class="badge bg-{{ $attendance->status == 'Present' ? 'success' : 'warning' }}">
-                                    {{ $attendance->status }}
-                                </span>
-                            </td>
-                        </tr>
+                        @foreach ($attendances as $attendance)
+                            <tr>
+                                <td>{{ Carbon\Carbon::parse($attendance->date)->format('M d, Y') }}</td>
+                                <td>{{ $attendance->time_in ? Carbon\Carbon::parse($attendance->time_in)->format('h:i A') : '-' }}</td>
+                                <td>{{ $attendance->break_out ? Carbon\Carbon::parse($attendance->break_out)->format('h:i A') : '-' }}</td>
+                                <td>{{ $attendance->break_in ? Carbon\Carbon::parse($attendance->break_in)->format('h:i A') : '-' }}</td>
+                                <td>{{ $attendance->time_out ? Carbon\Carbon::parse($attendance->time_out)->format('h:i A') : '-' }}</td>
+                                <td>
+                                    <span class="badge bg-{{ $attendance->status == 'Present' ? 'success' : 'warning' }}">
+                                        {{ $attendance->status }}
+                                    </span>
+                                </td>
+                                <td>{{ number_format($attendance->total_hours, 2) }}</td>
+                                <td>{{ number_format($attendance->total_regular_hours, 2) }}</td>
+                                <td>{{ number_format($attendance->total_overtime_hours, 2) }}</td>
+                            </tr>
                         @endforeach
                     </tbody>
                 </table>

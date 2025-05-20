@@ -214,6 +214,9 @@ class PayslipController extends Controller
                 $overtimePay += $hourlyRate * 1.30 * $totalWeekendHours; // 30% premium for weekend work
             }
 
+            // Calculate total earnings
+            $totalEarnings = $basicPay + $overtimePay;
+
             // Process deductions
             $totalDeductions = 0;
             $loanDeductions = 0;
@@ -233,13 +236,22 @@ class PayslipController extends Controller
                 }
             }
 
-            $totalDeductions = $contributionDeductions + $loanDeductions;
+            // Calculate total deductions (contributions + loans)
+           $taxableIncome = max(0, $totalEarnings - $contributionDeductions - $loanDeductions);
 
-            // Calculate tax
-            $taxableIncome = max(0, $basicPay + $overtimePay - $totalDeductions);
+            // Calculate tax based on taxable income
             $tax = $request->period_type === 'monthly' 
                 ? $employee->calculateMonthlyTax($taxableIncome)
                 : $employee->calculateSemiTax($taxableIncome);
+
+            // Now calculate net salary
+            $totalDeductions = $contributionDeductions + $loanDeductions + $tax;
+           
+
+            // Total deductions (to be saved in DB)
+            
+
+            $netSalary = $totalEarnings - $totalDeductions;
 
             // Create payslip
             Payslip::create([
@@ -253,7 +265,7 @@ class PayslipController extends Controller
                 'loan_deductions' => max(0, $loanDeductions),
                 'total_deductions' => max(0, $totalDeductions),
                 'tax' => max(0, $tax),
-                'net_salary' => max(0, $taxableIncome - $tax),
+                'net_salary' => $netSalary,
                 'payment_status' => 'pending'
             ]);
         }

@@ -45,11 +45,23 @@
             border-radius: 5px;
             background-color: #f8f9fa;
         }
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+        }
     </style>
 </head>
 <body style="background-color: #f8f9fa">
+
+    <a href="{{ route('login') }}" class="btn btn-sm btn-outline-secondary back-button">
+        ← Back
+    </a>
+
     <div class="container mt-5">
-        <h2 class="text-center mb-4">Employee Attendance Tracker</h2>   
+       
+        <h2 class="text-center mb-4">Employee Attendance Tracker Subsystem</h2>   
         <div class="container mt-5" style="width: 500px;">
             <div id="clock" class="text-center"></div>
             <div id="date" class="text-center mb-1"></div>
@@ -68,7 +80,7 @@
             @endif
         </div>
        
-        <form method="POST" action="{{ route('attendances.store') }}" style="width: 500px;" class="mx-auto mt-3">
+        <form method="POST" action="{{ route('employee.attendance.store') }}" style="width: 500px;" class="mx-auto mt-3">
             @csrf
             <input type="hidden" name="date" id="current_date" value="{{ now()->format('Y-m-d') }}">
             <input type="hidden" name="time_in" id="time_in">
@@ -108,6 +120,7 @@
                 </div>
             </div>
         </form>
+       
     </div>
 
     <script>
@@ -131,6 +144,13 @@
         }
 
         function setAttendanceType(type) {
+            // Add confirmation for time out
+            if (type === 'time_out') {
+                if (!confirm('Are you sure you want to time out?')) {
+                    return;
+                }
+            }
+
             const now = new Date();
             const timeString = now.toLocaleTimeString('en-US', { hour12: false });
             

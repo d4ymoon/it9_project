@@ -71,8 +71,7 @@
                         <tr>
                             <th style="width:">ID</th>
                             <th style="width:">Name</th>
-                            <th style="width:">Salary</th>
-                            
+                            <th style="width:">Salary</th>                          
                             <th style="width:">Actions</th>
                         </tr>
                     </thead>
@@ -81,7 +80,7 @@
                             <tr>
                                 <td>{{ $position->id }}</td>
                                 <td>{{ $position->name }}</td>
-                                <td>₱{{ number_format($position->salary, 2) }}</td>
+                                <td class="text-end">₱{{ number_format($position->salary, 2) }}</td>
                                
                                 <td class="text-nowrap" style="width:200px">
                                     <button class="btn btn-sm btn-primary" data-bs-toggle="modal"

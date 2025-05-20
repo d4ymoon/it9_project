@@ -70,4 +70,67 @@ class DashboardController extends Controller
             'monthlyStats'
         ));
     }
+
+    public function index2()
+    {
+        // Get total active employees
+        $totalEmployees = Employee::where('status', 'active')->count();
+
+        // Get today's attendance count
+        $todayAttendance = DB::table('attendances')
+            ->whereDate('date', Carbon::today())
+            ->count();
+
+        // Get present employees count
+        $presentEmployees = DB::table('attendances')
+            ->whereDate('date', Carbon::today())
+            ->where('status', 'Present')
+            ->count();
+
+        // Get yearly payroll total
+        $yearlyPayroll = Payslip::whereYear('pay_period', Carbon::now()->year)
+            ->sum('net_salary');
+
+        // Get payroll statistics for the current year
+        $monthlyStats = Payslip::selectRaw('
+            DATE_FORMAT(pay_period, "%Y-%m") as month,
+            SUM(net_salary) as total_net_pay,
+            COUNT(DISTINCT employee_id) as total_employees
+        ')
+        ->whereYear('pay_period', Carbon::now()->year)
+        ->groupBy('month')
+        ->orderBy('month', 'asc')
+        ->get()
+        ->map(function($stat) {
+            $stat->month = Carbon::createFromFormat('Y-m', $stat->month)->format('M Y');
+            return $stat;
+        });
+
+        // Get overtime data for the current year
+        $overtimeQuery = Payslip::selectRaw('
+            DATE_FORMAT(pay_period, "%Y-%m") as month,
+            SUM(overtime_hours) as total_overtime_hours
+        ')
+        ->whereYear('pay_period', Carbon::now()->year)
+        ->groupBy('month')
+        ->orderBy('month', 'asc')
+        ->get();
+
+        // Format overtime data for the chart
+        $overtimeData = [
+            'labels' => $overtimeQuery->map(function($item) {
+                return Carbon::createFromFormat('Y-m', $item->month)->format('M Y');
+            }),
+            'data' => $overtimeQuery->pluck('total_overtime_hours')
+        ];
+
+        return view('dashboard.index2', compact(
+            'totalEmployees',
+            'todayAttendance',
+            'presentEmployees',
+            'yearlyPayroll',
+            'overtimeData',
+            'monthlyStats'
+        ));
+    }
 } 

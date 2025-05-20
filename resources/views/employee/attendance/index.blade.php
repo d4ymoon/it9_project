@@ -15,7 +15,6 @@
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>My Attendance Records</h1>
-        <a href="{{ route('employee.attendance.create') }}" class="btn btn-primary">Record Attendance</a>
     </div>
 
     <div class="card">
@@ -43,14 +42,10 @@
                                 <td>{{ $attendance->break_out ? Carbon\Carbon::parse($attendance->break_out)->format('h:i A') : '-' }}</td>
                                 <td>{{ $attendance->break_in ? Carbon\Carbon::parse($attendance->break_in)->format('h:i A') : '-' }}</td>
                                 <td>{{ $attendance->time_out ? Carbon\Carbon::parse($attendance->time_out)->format('h:i A') : '-' }}</td>
-                                <td>
-                                    <span class="badge bg-{{ $attendance->status == 'Present' ? 'success' : 'warning' }}">
-                                        {{ $attendance->status }}
-                                    </span>
-                                </td>
+                                <td>{{ $attendance->status }}</td>
                                 <td>{{ number_format($attendance->total_hours, 2) }}</td>
-                                <td>{{ number_format($attendance->total_regular_hours, 2) }}</td>
-                                <td>{{ number_format($attendance->total_overtime_hours, 2) }}</td>
+                                <td>{{ number_format($attendance->regular_hours, 2) }}</td>
+                                <td>{{ number_format($attendance->overtime_hours, 2) }}</td>
                             </tr>
                         @endforeach
                     </tbody>

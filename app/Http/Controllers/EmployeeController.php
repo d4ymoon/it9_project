@@ -9,6 +9,7 @@ use App\Models\Contribution;
 use App\Models\ContributionType;
 use App\Models\Shift;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class EmployeeController extends Controller
 {
@@ -47,7 +48,6 @@ class EmployeeController extends Controller
      */
     public function store(Request $request)
     {
-        //
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'contact_number' => 'required|string|max:11',
@@ -59,25 +59,64 @@ class EmployeeController extends Controller
             'payment_method' => 'required|in:cash,bank',
             'shift_id' => 'required|exists:shifts,id',
         ]);
-    
-        // Create the employee record
-        $employee = Employee::create($validated);
-    
-        // Create the user record associated with the employee
-        $user = User::create([
-            'name' => $employee->name,
-            'email' => $employee->email,
-            'password' => bcrypt('password'),
-            'role' => 'employee',
-            'employee_id' => $employee->id // Set employee_id in users table
-        ]);
-    
-        // Link the user to the employee
-        $employee->user_id = $user->id; // Set user_id in employees table
-        $employee->save();
-    
-        // Redirect back with a success message
-        return redirect()->route('employees.index')->with('success', 'Employee and User created successfully!');
+
+        // Set default status to active
+        $validated['status'] = 'active';
+
+        DB::beginTransaction();
+        try {
+            // Create employee
+            $employee = Employee::create($validated);
+
+            // Create user account
+            $user = User::create([
+                'name' => $employee->name,
+                'email' => $employee->email,
+                'password' => bcrypt('password'),
+                'role' => 'employee',
+                'employee_id' => $employee->id
+            ]);
+
+            // Link user to employee
+            $employee->update(['user_id' => $user->id]);
+
+            // Get contribution types
+            $gsis = ContributionType::where('name', 'GSIS')->first();
+            $philhealth = ContributionType::where('name', 'PhilHealth')->first();
+            $pagibig = ContributionType::where('name', 'Pag-IBIG')->first();
+
+            // Create contributions for the employee
+            $contributions = [
+                [
+                    'employee_id' => $employee->id,
+                    'contribution_type_id' => $gsis->id,
+                    'calculation_type' => 'salary_based',
+                    'value' => 9.00, // 9%
+                ],
+                [
+                    'employee_id' => $employee->id,
+                    'contribution_type_id' => $philhealth->id,
+                    'calculation_type' => 'salary_based',
+                    'value' => 2.25, // 2.25% employee share
+                ],
+                [
+                    'employee_id' => $employee->id,
+                    'contribution_type_id' => $pagibig->id,
+                    'calculation_type' => 'salary_based',
+                    'value' => 2.00, // 2% for salary over ₱1,500
+                ],
+            ];
+
+            foreach ($contributions as $contribution) {
+                Contribution::create($contribution);
+            }
+
+            DB::commit();
+            return redirect()->route('employees.index')->with('success', 'Employee created successfully with contributions.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Error creating employee: ' . $e->getMessage());
+        }
     }
 
     /**

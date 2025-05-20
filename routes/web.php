@@ -23,6 +23,10 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
+// Public attendance routes
+Route::get('/attendance/create', [AttendanceController::class, 'create'])->name('employee.attendance.create');
+Route::post('/attendance', [AttendanceController::class, 'store'])->name('employee.attendance.store');
+
 // Redirect root to appropriate dashboard based on role
 Route::get('/', function () {
     if (!Auth::check()) {
@@ -39,9 +43,7 @@ Route::middleware(['web', 'auth', \App\Http\Middleware\AdminMiddleware::class])-
         return view('dashboard.index1');
     })->name('admin.dashboard');
 
-    Route::get('/dashboard2', function () {
-        return view('dashboard.index2');
-    })->name('dashboard2');
+    Route::get('/dashboard2', [DashboardController::class, 'index2'])->name('dashboard2');
 
     // Payslip routes
     Route::get('payslips/payrolls', [PayslipController::class, 'payrolls'])->name('payslips.payrolls');
@@ -68,6 +70,9 @@ Route::middleware(['web', 'auth', \App\Http\Middleware\AdminMiddleware::class])-
     // Additional admin routes
     Route::put('employees/{employee}/update-role', [EmployeeController::class, 'updateRole'])->name('employees.updateRole');
     Route::post('positions/store', [PositionController::class, 'store'])->name('position.store');
+
+    // Admin attendance routes
+    Route::post('/attendances/adminadd', [AttendanceController::class, 'adminAdd'])->name('attendances.adminadd');
 });
 
 // Employee Routes
@@ -77,8 +82,6 @@ Route::middleware(['web', 'auth', \App\Http\Middleware\EmployeeMiddleware::class
     })->name('employee.dashboard');
     
     // Employee attendance routes
-    Route::get('/attendance/create', [AttendanceController::class, 'create'])->name('employee.attendance.create');
-    Route::post('/attendance', [AttendanceController::class, 'store'])->name('employee.attendance.store');
     Route::get('/attendance', [AttendanceController::class, 'employeeAttendance'])->name('employee.attendance.index');
     
     // Employee loan view route

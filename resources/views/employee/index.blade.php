@@ -88,7 +88,7 @@
                     <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center " id="menu">
 
                     <li class="text-center">
-                        <h5 class="nav-link align-middle px-2" style="user-select: none; cursor: pointer;">  
+                        <h5 class=" align-middle px-2" style="user-select: none; cursor: pointer;">  
                         <span class="sidebar-text align-items-center"><b>Payroll System</b></span>
                         </h5>
                     </li>
@@ -116,11 +116,7 @@
                         </a>
                     </li>
 
-                    <li>
-                        <a href="{{ route('employee.attendance.create') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('employee.attendance.create') }}')">
-                            <i class="bi bi-person-check"></i> <span class="sidebar-text">Employee attendance</span>
-                        </a>
-                    </li>
+
                     <hr>
                      <li>
                         <a href="{{ route('profile.edit') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('profile.edit') }}')">
@@ -129,7 +125,7 @@
                     </li>
                           
                     
-                    <form method="POST" action="{{ route('logout') }}" class=" nav-link px-2 align-middle" onsubmit="return confirmLogout(event)">
+                    <form method="POST" action="{{ route('logout') }}" class=" nav-link px-2 align-middle" onsubmit="clearIframePageBeforeLogout(event)">
                         @csrf
                         <button type="submit" class=" text-start text-white bg-transparent border-0 w-100 px-0">
                             <i class="bi bi-box-arrow-right"></i> <span class="sidebar-text">Sign Out</span>
@@ -176,7 +172,7 @@
     }
 
     window.onload = function () {
-        var lastPage = localStorage.getItem('lastIframePage') || '{{ route("dashboard2") }}';
+        var lastPage = localStorage.getItem('lastIframePage') || '{{ route("employee.payslips.index") }}';
         document.getElementById('contentFrame').src = lastPage;
         highlightActiveLink(lastPage);
     }
@@ -199,14 +195,15 @@
         });
     });
 
-     function confirmLogout(event) {
-        if (!confirm("Are you sure you want to sign out?")) {
-            event.preventDefault();
-            return false;
-        }
-        return true;
+    function clearIframePageBeforeLogout(event) {
+    if (!confirm("Are you sure you want to sign out?")) {
+        event.preventDefault();
+        return false;
     }
-
+    // Clear last iframe page so it does not persist
+    localStorage.removeItem('lastIframePage');
+    return true;
+}
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>

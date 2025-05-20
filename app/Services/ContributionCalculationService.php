@@ -16,9 +16,11 @@ class ContributionCalculationService
      */
     public function calculateContribution(float $salary, Contribution $contribution): float
     {
-        $type = $contribution->contributionType->name;
+        if ($contribution->calculation_type === 'fixed') {
+            return $contribution->value;
+        }
 
-        return match ($type) {
+        return match ($contribution->contributionType->name) {
             'GSIS' => $this->calculateGSIS($salary),
             'PhilHealth' => $this->calculatePhilHealth($salary),
             'Pag-IBIG' => $this->calculatePagIBIG($salary),
@@ -32,29 +34,27 @@ class ContributionCalculationService
      */
     private function calculateGSIS(float $salary): float
     {
-        return $salary * 0.09;
+        return round($salary * 0.09, 2);
     }
 
     /**
      * Calculate PhilHealth contribution
-     * PhilHealth contribution is 3% of the monthly salary
+     * PhilHealth contribution is based on salary brackets
      */
-   private function calculatePhilHealth(float $salary): float
+    private function calculatePhilHealth(float $salary): float
     {
-        $rate = 0.045; // Total 4.5%
-        $employeeShareRate = $rate / 2; // 2.25%
-
         if ($salary <= 10000) {
             return 250.00; // Minimum employee share
         } elseif ($salary >= 100000) {
             return 2500.00; // Maximum employee share
         } else {
-            return round($salary * $employeeShareRate, 2);
+            return round($salary * 0.0225, 2); // 2.25% employee share
         }
     }
+
     /**
      * Calculate Pag-IBIG contribution
-     * Pag-IBIG contribution is 2% of the monthly salary
+     * Pag-IBIG contribution is 1% for ₱1,500 and below, 2% for over ₱1,500
      */
     private function calculatePagIBIG(float $salary): float
     {

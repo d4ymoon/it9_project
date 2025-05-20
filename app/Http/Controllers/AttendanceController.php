@@ -89,6 +89,30 @@ class AttendanceController extends Controller
                     ->withInput();
             }
 
+            // Get current time
+            $now = Carbon::now();
+            $currentTime = $now->format('H:i:s');
+            
+            // For time in, check if it's within allowed time range
+            if ($validated['type'] === 'time_in') {
+                $shiftStart = Carbon::parse($shift->start_time);
+                $earliestAllowed = $shiftStart->copy()->subHours(3);
+                
+                // If current time is after shift end time, don't allow time in
+                if ($now->format('H:i:s') > $shift->end_time) {
+                    return redirect()->back()
+                        ->with('error', 'Cannot time in after shift end time.')
+                        ->withInput();
+                }
+                
+                // If current time is more than 3 hours before shift start, don't allow time in
+                if ($now->format('H:i:s') < $earliestAllowed->format('H:i:s')) {
+                    return redirect()->back()
+                        ->with('error', 'Cannot time in more than 3 hours before shift start time.')
+                        ->withInput();
+                }
+            }
+
             // Find or create attendance record
             $attendance = Attendance::firstOrCreate([
                 'employee_id' => $validated['employee_id'],
@@ -139,7 +163,6 @@ class AttendanceController extends Controller
             }
 
             // Set the appropriate time field based on type
-            $now = Carbon::now();
             $attendance->$timeField = $now;
 
             // Update status based on attendance state
@@ -317,5 +340,69 @@ class AttendanceController extends Controller
             ->paginate(10);
 
         return view('employee.attendance.index', compact('attendances'));
+    }
+
+    public function adminAdd(Request $request)
+    {
+        try {
+            // Log the incoming request data
+            Log::info('Incoming request data:', $request->all());
+
+            $validated = $request->validate([
+                'employee_id' => 'required|exists:employees,id',
+                'date' => 'required|date',
+                'status' => 'required|in:Present,Leave',
+                'regular_hours' => 'required|numeric|min:0|max:24',
+                'overtime_hours' => 'required|numeric|min:0|max:24',
+            ]);
+
+            Log::info('Validated data:', $validated);
+
+            // Check if attendance already exists for this employee and date
+            $existingAttendance = Attendance::where('employee_id', $validated['employee_id'])
+                ->where('date', $validated['date'])
+                ->first();
+
+            if ($existingAttendance) {
+                throw new \Exception('An attendance record already exists for this employee on this date.');
+            }
+
+            // Create attendance record with correct column names
+            $attendance = new Attendance();
+            $attendance->employee_id = $validated['employee_id'];
+            $attendance->date = $validated['date'];
+            $attendance->status = $validated['status'];
+            $attendance->regular_hours = $validated['regular_hours'];
+            $attendance->overtime_hours = $validated['overtime_hours'];
+            $attendance->total_hours = $validated['regular_hours'] + $validated['overtime_hours'];
+            $attendance->time_in = null;
+            $attendance->break_out = null;
+            $attendance->break_in = null;
+            $attendance->time_out = null;
+
+            Log::info('Attempting to save attendance:', $attendance->toArray());
+
+            if (!$attendance->save()) {
+                throw new \Exception('Failed to save attendance record.');
+            }
+
+            Log::info('Attendance saved successfully', ['id' => $attendance->id]);
+            return redirect()->route('attendances.index')
+                ->with('success', 'Attendance record added successfully.');
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation error:', ['errors' => $e->errors()]);
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput();
+        } catch (\Exception $e) {
+            Log::error('Error creating attendance:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->back()
+                ->with('error', $e->getMessage())
+                ->withInput();
+        }
     }
 }

@@ -99,10 +99,10 @@
                                 <tr>
                                     <td>{{ $loan->employee->name }}</td>
                                     <td>{{ $loan->loan_type }}</td>
-                                    <td>₱{{ number_format($loan->loan_amount, 2) }}</td>
+                                    <td class="text-end">₱{{ number_format($loan->loan_amount, 2) }}</td>
                                     <td>{{ $loan->interest_rate }}%</td>
                                     <td>{{ number_format($loan->deduction_percentage, 2) }}%</td>
-                                    <td>₱{{ number_format($loan->remaining_balance, 2) }}</td>
+                                    <td class="text-end">₱{{ number_format($loan->remaining_balance, 2) }}</td>
                                     <td>{{ $loan->start_date->format('M d, Y') }}</td>
                                     <td>{{ ucfirst($loan->status) }}</td>
                                     <td class="text-nowrap">

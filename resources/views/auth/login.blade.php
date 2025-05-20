@@ -20,9 +20,11 @@
         .btn-login {
             width: 100%;
         }
+        
         .btn-attendance {
-            width: 100%;
-        }
+    width: 100%;
+    font-size: 0.9rem;
+}
     </style>
 </head>
 <body>
@@ -66,8 +68,13 @@
                 </form>
             </div>
         </div>
+         <div class="text-center mt-3">
+    <a href="{{ route('employee.attendance.create') }}" class="btn btn-outline-secondary btn-attendance">
+        Record Attendance (Subsystem)
+    </a>
+</div>
     </div>
-     <a href="{{ route('employee.attendance.create') }}" class="btn btn-primary">Record Attendance</a>
+   
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

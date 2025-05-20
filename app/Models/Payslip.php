@@ -63,10 +63,6 @@ class Payslip extends Model
             }
         }
 
-        // Update total_deductions to include contributions
-        $this->total_deductions = $totalContributions + ($this->loan_deductions ?? 0);
-        $this->save();
-
         return [
             'details' => $contributions,
             'total' => $totalContributions
@@ -93,22 +89,7 @@ class Payslip extends Model
     {
         parent::boot();
 
-        static::creating(function ($payslip) {
-            // Calculate contributions when creating a new payslip
-            $contributionService = new ContributionCalculationService();
-            $totalContributions = 0;
-
-            if ($payslip->employee && $payslip->employee->contributions) {
-                foreach ($payslip->employee->contributions as $contribution) {
-                    if ($contribution->calculation_type === 'salary_based' && $contribution->contributionType) {
-                        $amount = $contributionService->calculateContribution($payslip->basic_pay, $contribution);
-                        $totalContributions += $amount;
-                    }
-                }
-            }
-
-            // Set total deductions including contributions and loan deductions
-            $payslip->total_deductions = $totalContributions + ($payslip->loan_deductions ?? 0);
-        });
+        // Remove the automatic calculation of total_deductions
+        // The calculation should only happen in the controller
     }
 }

@@ -21,15 +21,49 @@
             </div>
         @endif
 
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
+        @if ($errors->any())
+            <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
         <!--- Controls Row --->
         <div class="row mt-3 align-items-end">
             <div class="col-auto">
                 <form action="{{ route('attendances.index') }}" method="GET" class="row g-3 align-items-end">
                     <!-- Month Filter -->
                     <div class="col-auto">
-                        <input type="month" class="form-control" id="month" name="month" placeholder="Month..." 
-                               value="{{ request('month') }}"
-                               min="{{ $minDate }}" max="{{ $maxDate }}">
+                        <div class="input-group">
+                            <select class="form-select" id="month" name="month">
+                                <option value="">All Months</option>
+                                @php
+                                    $start = Carbon\Carbon::parse($minDate);
+                                    $end = Carbon\Carbon::parse($maxDate);
+                                    $current = $start->copy();
+                                @endphp
+                                @while($current->lte($end))
+                                    <option value="{{ $current->format('Y-m') }}" {{ request('month') == $current->format('Y-m') ? 'selected' : '' }}>
+                                        {{ $current->format('F Y') }}
+                                    </option>
+                                    @php
+                                        $current->addMonth();
+                                    @endphp
+                                @endwhile
+                            </select>
+                            <button class="btn btn-dark" type="submit"><i class="bi bi-funnel"></i> Filter</button>
+                        </div>
                     </div>
 
                     <!-- Day Filter -->
@@ -133,7 +167,7 @@
                     <h5 class="modal-title" id="addAttendanceModalLabel">Add Attendance Record</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="{{ route('attendances.store') }}" method="POST">
+                <form action="{{ route('attendances.adminadd') }}" method="POST">
                     @csrf
                     <div class="modal-body">
                         <div class="row mb-3">
@@ -154,38 +188,30 @@
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <label for="time_in" class="col-sm-4 col-form-label">Time In:</label>
-                            <div class="col-sm-8">
-                                <input type="time" class="form-control" id="time_in" name="time_in">
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <label for="break_out" class="col-sm-4 col-form-label">Break Out:</label>
-                            <div class="col-sm-8">
-                                <input type="time" class="form-control" id="break_out" name="break_out">
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <label for="break_in" class="col-sm-4 col-form-label">Break In:</label>
-                            <div class="col-sm-8">
-                                <input type="time" class="form-control" id="break_in" name="break_in">
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <label for="time_out" class="col-sm-4 col-form-label">Time Out:</label>
-                            <div class="col-sm-8">
-                                <input type="time" class="form-control" id="time_out" name="time_out">
-                            </div>
-                        </div>
-                        <div class="row mb-3">
                             <label for="status" class="col-sm-4 col-form-label">Status:</label>
                             <div class="col-sm-8">
                                 <select class="form-select" id="status" name="status" required>
                                     <option value="Present">Present</option>
-                                    <option value="Absent">Absent</option>
-                                    <option value="Half Day">Half Day</option>
                                     <option value="Leave">Leave</option>
                                 </select>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="regular_hours" class="col-sm-4 col-form-label">Regular Hours:</label>
+                            <div class="col-sm-8">
+                                <input type="number" class="form-control" id="regular_hours" name="regular_hours" min="0" max="24" step="0.5" value="8" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label for="overtime_hours" class="col-sm-4 col-form-label">Overtime Hours:</label>
+                            <div class="col-sm-8">
+                                <input type="number" class="form-control" id="overtime_hours" name="overtime_hours" min="0" max="24" step="0.5" value="0" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <label class="col-sm-4 col-form-label">Total Hours:</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control" id="total_hours" readonly>
                             </div>
                         </div>
                     </div>
@@ -270,6 +296,21 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous">
+    </script>
+    <script>
+        // Calculate total hours when regular or overtime hours change
+        document.getElementById('regular_hours').addEventListener('input', calculateTotal);
+        document.getElementById('overtime_hours').addEventListener('input', calculateTotal);
+
+        function calculateTotal() {
+            const regular = parseFloat(document.getElementById('regular_hours').value) || 0;
+            const overtime = parseFloat(document.getElementById('overtime_hours').value) || 0;
+            const total = regular + overtime;
+            document.getElementById('total_hours').value = total.toFixed(1) + ' hours';
+        }
+
+        // Initialize total hours on page load
+        calculateTotal();
     </script>
 </body>
 

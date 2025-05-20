@@ -96,10 +96,6 @@
                                     <td>{{ ucfirst($employee->payment_method) }}</td>
 
                                     <td class="text-nowrap">
-                                         <button class="btn btn-sm btn-info" data-bs-toggle="modal"
-                                            data-bs-target="#editEmployeeContribution{{ $employee->id }}">
-                                            <i class="bi bi-list-check"></i> Contributions
-                                        </button>
                                         <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#viewEmployeeModal{{ $employee->id }}">
                                             <i class="bi bi-eye"></i>
                                         </button>
@@ -330,6 +326,16 @@
                                                             <select class="form-select" id="payment_method{{ $employee->id }}" name="payment_method" required>
                                                                 <option value="cash" {{ $employee->payment_method == 'cash' ? 'selected' : '' }}>Cash</option>
                                                                 <option value="bank" {{ $employee->payment_method == 'bank' ? 'selected' : '' }}>Bank</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="row mb-3">
+                                                        <label for="status{{ $employee->id }}" class="col-md-4 col-form-label">Status</label>
+                                                        <div class="col-md-8">
+                                                            <select class="form-select" id="status{{ $employee->id }}" name="status" required>
+                                                                <option value="active" {{ $employee->status === 'active' ? 'selected' : '' }}>Active</option>
+                                                                <option value="inactive" {{ $employee->status === 'inactive' ? 'selected' : '' }}>Inactive</option>
                                                             </select>
                                                         </div>
                                                     </div>

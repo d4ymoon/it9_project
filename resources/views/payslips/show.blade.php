@@ -128,7 +128,7 @@
                             </tr>
                             <tr class="table-secondary">
                                 <td><strong>Total Deductions</strong></td>
-                                <td class="text-end"><strong>₱{{ number_format($payslip->total_deductions + $payslip->tax, 2) }}</strong></td>
+                                <td class="text-end"><strong>₱{{ number_format($payslip->total_deductions, 2) }}</strong></td>
                             </tr>
                         </table>
                     </div>

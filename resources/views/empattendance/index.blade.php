@@ -48,7 +48,7 @@
 </head>
 <body>
     <div class="container mt-5">
-        <h2 class="text-center mb-4">Employee Attendance Tracker</h2>   
+        <h2 class="text-center mb-4">Employee Attendance Tracker Subsytem</h2>   
         <div class="container mt-5" style="width: 500px;">
             <div id="clock" class="text-center"></div>
             <div id="date" class="text-center mb-1"></div>

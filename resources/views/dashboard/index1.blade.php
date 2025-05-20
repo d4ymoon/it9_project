@@ -88,8 +88,8 @@
                     <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center " id="menu">
 
                     <li>
-                        <h5 class="nav-link align-middle px-2" onclick="toggleSidebar()" style="user-select: none; cursor: pointer;">  
-                        <i class="bi bi-list"></i> <span class="sidebar-text align-items-center"><b>Payroll System</b></span>
+                        <h5 class="align-middle px-2 text-center" style="user-select: none; cursor: pointer;">  
+                        <span class="sidebar-text align-items-center"><b>Payroll System</b></span>
                         </h5>
                     </li>
 
@@ -118,6 +118,12 @@
                         </a>
                     </li>
 
+                     <li>
+                        <a href="{{ route('loans.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('loans.index') }}')">
+                            <i class="bi bi-cash-coin"></i> <span class="sidebar-text">Loans</span>
+                        </a>
+                    </li>
+
 
                     <li>
                         <a href="{{ route('positions.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('positions.index') }}')">
@@ -129,27 +135,12 @@
                             <i class="bi bi-clock"></i> <span class="sidebar-text">Shift Types</span>
                         </a>
                     </li>
-                    <li>
-                        <a href="{{ route('contributiontypes.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('contributiontypes.index') }}')">
-                            <i class="bi bi-piggy-bank"></i> <span class="sidebar-text">Contribution Types</span>
-                        </a>
-                    </li>
 
-                    <li>
-                        <a href="{{ route('loans.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('loans.index') }}')">
-                            <i class="bi bi-cash-coin"></i> <span class="sidebar-text">Loans</span>
-                        </a>
-                    </li>
+                   
 
                     <li>
                         <a href="{{ route('attendances.index') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('attendances.index') }}')">
                             <i class="bi bi-journal"></i> <span class="sidebar-text">Attendance Records</span>
-                        </a>
-                    </li>
-
-                    <li>
-                        <a href="{{ route('attendances.create') }}" class="nav-link px-2 align-middle" target="content-frame" onclick="saveIframePage('{{ route('attendances.create') }}')">
-                            <i class="bi bi-person-check"></i> <span class="sidebar-text">Employee attendance</span>
                         </a>
                     </li>
                     <hr>
